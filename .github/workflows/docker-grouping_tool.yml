@@ -4,7 +4,7 @@ on:
   # 触发条件：推送以 "grouping-v" 开头的 tag，例如 grouping-v1.0, grouping-v2.1
   push:
     tags:
-      - 'grouping-v*'
+      - 'grouping-tool:v*'
 
 jobs:
   build-and-push:
@@ -36,8 +36,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./experiment/grouping_tools    # 👈 关键：构建上下文是子目录
-          file: ./experiment/grouping_tools/Dockerfile
+          context: ./experiment/grouping_tool    # 👈 关键：构建上下文是子目录
+          file: ./experiment/grouping_tool/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
