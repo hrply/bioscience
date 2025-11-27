@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>科学分组工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px;
+        }
+
+        .form-group {
+            flex: 1 0 300px;
+            padding: 0 10px;
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .input-row {
+            display: flex;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .input-field {
+            margin-right: 10px;
+            flex: 1;
+        }
+
+        .confirm-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            cursor: pointer;
+            width: auto;
+        }
+
+        .confirm-btn:hover {
+            background-color: #218838;
+        }
+
+        .group-definition {
+            display: none;
+        }
+
+        .custom-groups-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .custom-groups-table th, .custom-groups-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .custom-groups-table th {
+            background-color: #f2f2f2;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .success {
+            color: #155724;
+            background-color: #d4edda;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .result-id {
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 15px;
+        }
+
+        .data-input-section {
+            margin-top: 20px;
+        }
+
+        .stats-table {
+            margin-top: 20px;
+        }
+
+        .download-section {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .download-btn {
+            background-color: #17a2b8;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .download-btn:hover {
+            background-color: #138496;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>科学分组工具</h1>
+
+        <!-- 第一部分：分组参数设定 -->
+        <div class="section">
+            <div class="section-title">分组参数设定</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="animal-count">动物总数:</label>
+                    <input type="number" id="animal-count" value="10" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="param-category">参数类别 (用逗号分隔，如: 体重,血糖):</label>
+                    <input type="text" id="param-category" placeholder="体重,血糖" value="体重,摄食量">
+                </div>
+                <div class="form-group">
+                    <label for="group-count">分组组数:</label>
+                    <input type="number" id="group-count" value="3" min="2" max="10">
+                </div>
+                <div class="form-group">
+                    <label for="group-setting">组别设定:</label>
+                    <select id="group-setting">
+                        <option value="average">平均分组</option>
+                        <option value="custom">自定义分组</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="layer-params">分层随机化参数 (用逗号分隔，如: 体重,摄食量):</label>
+                    <input type="text" id="layer-params" placeholder="体重,摄食量" value="体重,摄食量">
+                </div>
+            </div>
+
+            <div id="group-definition" class="group-definition">
+                <div class="form-group">
+                    <label>组别输入:</label>
+                    <table class="custom-groups-table">
+                        <thead>
+                            <tr>
+                                <th>组序号</th>
+                                <th>组名称</th>
+                                <th>N</th>
+                            </tr>
+                        </thead>
+                        <tbody id="custom-groups-tbody">
+                            <!-- Dynamic rows will be added here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第二部分：数据输入 -->
+        <div class="section">
+            <div class="section-title">数据输入</div>
+
+            <div style="margin-bottom: 20px;">
+                <label for="csv-upload">上传CSV文件:</label>
+                <input type="file" id="csv-upload" accept=".csv">
+                <button id="upload-btn">上传并读取</button>
+            </div>
+
+            <div class="data-input-section">
+                <div id="dynamic-inputs">
+                    <!-- Dynamic inputs will be generated here -->
+                </div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <div class="section-title">CSV数据显示</div>
+                <div id="csv-preview"></div>
+            </div>
+        </div>
+
+        <!-- 第三部分：分组结果 -->
+        <div class="section">
+            <div class="section-title">分组结果</div>
+            <button id="execute-grouping">执行分组</button>
+
+            <div id="results" class="results hidden">
+                <div id="result-id" class="result-id"></div>
+                <div id="groups-container"></div>
+                <div id="stats-container" class="stats-table"></div>
+
+                <div class="download-section">
+                    <button id="download-results" class="download-btn">下载分组结果</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const animalCount = document.getElementById('animal-count');
+            const paramCategory = document.getElementById('param-category');
+            const groupCount = document.getElementById('group-count');
+            const groupSetting = document.getElementById('group-setting');
+            const layerParams = document.getElementById('layer-params');
+            const groupDefinition = document.getElementById('group-definition');
+            const customGroupsTbody = document.getElementById('custom-groups-tbody');
+            const dynamicInputs = document.getElementById('dynamic-inputs');
+            const csvPreview = document.getElementById('csv-preview');
+            const executeBtn = document.getElementById('execute-grouping');
+            const resultsDiv = document.getElementById('results');
+            const resultIdDiv = document.getElementById('result-id');
+            const groupsContainer = document.getElementById('groups-container');
+            const statsContainer = document.getElementById('stats-container');
+            const downloadBtn = document.getElementById('download-results');
+
+            // Data storage
+            let inputData = {};
+            let groupSizes = {}; // To store custom group sizes
+
+            // Initialize with default values
+            updateDynamicInputs();
+            updateCustomGroupsTable();
+
+            // Event listeners
+            paramCategory.addEventListener('input', updateDynamicInputs);
+            groupCount.addEventListener('input', updateCustomGroupsTable);
+            groupSetting.addEventListener('change', function() {
+                if (this.value === 'custom') {
+                    groupDefinition.style.display = 'block';
+                    updateCustomGroupsTable();
+                } else {
+                    groupDefinition.style.display = 'none';
+                }
+            });
+
+            // Update custom groups table based on group count
+            function updateCustomGroupsTable() {
+                const count = parseInt(groupCount.value) || 0;
+                customGroupsTbody.innerHTML = '';
+
+                if (groupSetting.value === 'custom') {
+                    for (let i = 1; i <= count; i++) {
+                        const row = document.createElement('tr');
+
+                        // Group number
+                        const numCell = document.createElement('td');
+                        numCell.textContent = i;
+
+                        // Group name
+                        const nameCell = document.createElement('td');
+                        const nameInput = document.createElement('input');
+                        nameInput.type = 'text';
+                        nameInput.placeholder = '组' + i;
+                        nameInput.id = `group-name-${i}`;
+                        nameCell.appendChild(nameInput);
+
+                        // N value
+                        const nCell = document.createElement('td');
+                        const nInput = document.createElement('input');
+                        nInput.type = 'number';
+                        nInput.min = '0';
+                        nInput.id = `group-n-${i}`;
+                        nInput.value = groupSizes[i] || '';
+                        nCell.appendChild(nInput);
+
+                        row.appendChild(numCell);
+                        row.appendChild(nameCell);
+                        row.appendChild(nCell);
+
+                        customGroupsTbody.appendChild(row);
+                    }
+                }
+            }
+
+            // Update dynamic inputs based on parameter settings
+            function updateDynamicInputs() {
+                const params = paramCategory.value.split(',').map(param => param.trim()).filter(param => param);
+
+                // Create column headers (Original ID + parameters)
+                const columns = ['原始编号', ...params];
+
+                // Clear existing inputs
+                dynamicInputs.innerHTML = '';
+
+                // Create header row
+                const headerRow = document.createElement('div');
+                headerRow.className = 'input-row';
+
+                for (let i = 0; i < columns.length; i++) {
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'input-field';
+                    headerDiv.textContent = columns[i];
+                    headerDiv.style.fontWeight = 'bold';
+                    headerRow.appendChild(headerDiv);
+                }
+
+                // Add empty space for the button column
+                const buttonPlaceholder = document.createElement('div');
+                buttonPlaceholder.style.width = '100px';
+                headerRow.appendChild(buttonPlaceholder);
+
+                dynamicInputs.appendChild(headerRow);
+
+                // Create input row
+                const inputRow = document.createElement('div');
+                inputRow.className = 'input-row';
+
+                // Create input fields for each column
+                for (let i = 0; i < columns.length; i++) {
+                    const inputDiv = document.createElement('div');
+                    inputDiv.className = 'input-field';
+
+                    const input = document.createElement('input');
+                    input.type = columns[i] === '原始编号' ? 'text' : 'number';
+                    input.placeholder = columns[i];
+                    input.id = `${columns[i]}-input`;
+
+                    inputDiv.appendChild(input);
+                    inputRow.appendChild(inputDiv);
+                }
+
+                // Add confirm button
+                const buttonDiv = document.createElement('div');
+                const confirmBtn = document.createElement('button');
+                confirmBtn.className = 'confirm-btn';
+                confirmBtn.textContent = '确认输入';
+                confirmBtn.addEventListener('click', addData);
+
+                buttonDiv.appendChild(confirmBtn);
+                inputRow.appendChild(buttonDiv);
+
+                dynamicInputs.appendChild(inputRow);
+
+                // Refresh CSV preview
+                updateCsvPreview();
+            }
+
+            // Add data to storage
+            function addData() {
+                const params = paramCategory.value.split(',').map(param => param.trim()).filter(param => param);
+                const columns = ['原始编号', ...params];
+
+                // Get values from input fields
+                const row = {};
+                let hasEmptyValue = false;
+
+                for (const col of columns) {
+                    const input = document.getElementById(`${col}-input`);
+                    const value = input.value.trim();
+
+                    if (!value) {
+                        hasEmptyValue = true;
+                        break;
+                    }
+
+                    // For numeric columns, validate that input is numeric
+                    if (col !== '原始编号' && isNaN(parseFloat(value))) {
+                        alert(`列 "${col}" 必须输入数字`);
+                        return;
+                    }
+
+                    row[col] = col === '原始编号' ? value : parseFloat(value);
+                }
+
+                if (hasEmptyValue) {
+                    alert('请填写所有字段');
+                    return;
+                }
+
+                // Check for duplicate ID
+                const id = row['原始编号'];
+                if (inputData[id]) {
+                    const overwrite = confirm(`重复输入，是否覆盖?`);
+                    if (!overwrite) {
+                        return;
+                    }
+                }
+
+                // Add row to data storage
+                inputData[id] = row;
+
+                // Clear input fields
+                for (const col of columns) {
+                    document.getElementById(`${col}-input`).value = '';
+                }
+
+                // Update CSV preview
+                updateCsvPreview();
+            }
+
+            // Update CSV preview table
+            function updateCsvPreview() {
+                const params = paramCategory.value.split(',').map(param => param.trim()).filter(param => param);
+                const columns = ['原始编号', ...params];
+
+                // Create table
+                const table = document.createElement('table');
+
+                // Create header
+                const headerRow = document.createElement('tr');
+                for (const col of columns) {
+                    const th = document.createElement('th');
+                    th.textContent = col;
+                    headerRow.appendChild(th);
+                }
+                table.appendChild(headerRow);
+
+                // Create data rows
+                for (const id in inputData) {
+                    const row = inputData[id];
+                    const tr = document.createElement('tr');
+
+                    for (const col of columns) {
+                        const td = document.createElement('td');
+                        td.textContent = row[col] !== undefined ? row[col] : '';
+                        tr.appendChild(td);
+                    }
+
+                    table.appendChild(tr);
+                }
+
+                csvPreview.innerHTML = '';
+                csvPreview.appendChild(table);
+            }
+
+            // Function to calculate group sizes based on settings
+            function calculateGroupSizes() {
+                const animalCountValue = parseInt(animalCount.value);
+                const groupCountValue = parseInt(groupCount.value);
+
+                if (groupSetting.value === 'average') {
+                    // Calculate average distribution
+                    const baseSize = Math.floor(animalCountValue / groupCountValue);
+                    const remainder = animalCountValue % groupCountValue;
+
+                    const sizes = {};
+                    for (let i = 1; i <= groupCountValue; i++) {
+                        sizes[i] = baseSize + (i <= remainder ? 1 : 0);
+                    }
+                    return sizes;
+                } else {
+                    // Custom distribution
+                    const sizes = {};
+                    for (let i = 1; i <= groupCountValue; i++) {
+                        const nInput = document.getElementById(`group-n-${i}`);
+                        if (nInput && nInput.value) {
+                            sizes[i] = parseInt(nInput.value) || 0;
+                            // Store for future reference
+                            groupSizes[i] = sizes[i];
+                        } else {
+                            sizes[i] = 0;
+                        }
+                    }
+
+                    // Validate that total matches animal count
+                    const total = Object.values(sizes).reduce((sum, size) => sum + size, 0);
+                    if (total !== animalCountValue) {
+                        alert(`自定义分组总数 (${total}) 与动物总数 (${animalCountValue}) 不匹配！`);
+                        return null;
+                    }
+
+                    return sizes;
+                }
+            }
+
+            // Execute grouping
+            executeBtn.addEventListener('click', async function() {
+                // Validate inputs
+                const animalCountValue = parseInt(animalCount.value);
+                const groupCountValue = parseInt(groupCount.value);
+
+                if (isNaN(animalCountValue) || animalCountValue < 1) {
+                    alert('动物总数必须是大于等于1的整数');
+                    return;
+                }
+
+                if (isNaN(groupCountValue) || groupCountValue < 2) {
+                    alert('分组组数必须是大于等于2的整数');
+                    return;
+                }
+
+                const layerList = layerParams.value.split(',').map(layer => layer.trim()).filter(layer => layer);
+                if (layerList.length === 0) {
+                    alert('请指定至少一个分层随机化参数');
+                    return;
+                }
+
+                // Calculate group sizes
+                const calculatedGroupSizes = calculateGroupSizes();
+                if (!calculatedGroupSizes) {
+                    return; // Error already shown in calculateGroupSizes
+                }
+
+                // Format group sizes as an array for the API
+                const groupSizesArray = [];
+                for (let i = 1; i <= groupCountValue; i++) {
+                    groupSizesArray.push(calculatedGroupSizes[i] || 0);
+                }
+
+                // Check if we have enough input data
+                const dataCount = Object.keys(inputData).length;
+                if (dataCount < animalCountValue) {
+                    alert(`输入数据数量 (${dataCount}) 少于动物总数 (${animalCountValue})`);
+                    return;
+                } else if (dataCount > animalCountValue) {
+                    alert(`输入数据数量 (${dataCount}) 超过动物总数 (${animalCountValue})，将使用前 ${animalCountValue} 条数据`);
+                }
+
+                // Build CSV string from input data
+                // Limit to animalCountValue items
+                const params = paramCategory.value.split(',').map(param => param.trim()).filter(param => param);
+                const columns = ['原始编号', ...params];
+
+                // Create CSV header
+                let csvString = columns.join(',') + '\n';
+
+                // Add data rows up to animalCountValue
+                const dataEntries = Object.entries(inputData).slice(0, animalCountValue);
+                for (const [id, row] of dataEntries) {
+                    const rowValues = columns.map(col => row[col] !== undefined ? row[col] : '');
+                    csvString += rowValues.join(',') + '\n';
+                }
+
+                // Show loading state
+                const originalText = executeBtn.textContent;
+                executeBtn.textContent = '处理中...';
+                executeBtn.disabled = true;
+
+                try {
+                    const response = await fetch('/api/group', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            data: csvString,
+                            group_count: groupCountValue,
+                            layers: layerList,
+                            group_sizes: groupSizesArray
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        displayResults(result, layerList, calculatedGroupSizes);
+                    } else {
+                        alert(`错误: ${result.error || '未知错误'}`);
+                    }
+                } catch (error) {
+                    alert(`请求失败: ${error.message}`);
+                } finally {
+                    executeBtn.textContent = originalText;
+                    executeBtn.disabled = false;
+                }
+            });
+
+            // Display results function
+            function displayResults(data, layerList, groupSizes) {
+                resultIdDiv.textContent = `结果ID: ${data.id}`;
+
+                // Clear previous results
+                groupsContainer.innerHTML = '';
+                statsContainer.innerHTML = '';
+
+                // Create a div for each group with table display
+                for (const groupName in data.result) {
+                    const groupData = data.result[groupName];
+
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'result-group';
+
+                    const groupTitle = document.createElement('h3');
+                    // Try to get the custom group name if available
+                    const groupIndex = parseInt(groupName.replace('group_', ''));
+                    let groupNameDisplay = groupName;
+                    if (groupSetting.value === 'custom') {
+                        const nameInput = document.getElementById(`group-name-${groupIndex}`);
+                        if (nameInput && nameInput.value) {
+                            groupNameDisplay = `组 ${groupIndex} (${nameInput.value})`;
+                        } else {
+                            groupNameDisplay = `组 ${groupIndex}`;
+                        }
+                    }
+                    groupTitle.textContent = groupNameDisplay;
+                    groupDiv.appendChild(groupTitle);
+
+                    if (groupData.length === 0) {
+                        groupDiv.innerHTML += '<p>此组为空</p>';
+                    } else {
+                        // Create table for group data
+                        const table = document.createElement('table');
+
+                        // Create header row
+                        if (groupData.length > 0) {
+                            const headerRow = document.createElement('tr');
+
+                            // Get all unique keys from the first item to form headers (excluding bin columns)
+                            const firstItem = groupData[0];
+                            const keys = Object.keys(firstItem).filter(key => !key.endsWith('_bin') && key !== 'layer_key');
+
+                            for (const key of keys) {
+                                const th = document.createElement('th');
+                                th.textContent = key;
+                                headerRow.appendChild(th);
+                            }
+
+                            table.appendChild(headerRow);
+
+                            // Create data rows
+                            for (const item of groupData) {
+                                const row = document.createElement('tr');
+
+                                for (const key of keys) {
+                                    const td = document.createElement('td');
+                                    td.textContent = item[key] !== undefined ? item[key] : '';
+                                    row.appendChild(td);
+                                }
+
+                                table.appendChild(row);
+                            }
+                        }
+
+                        groupDiv.appendChild(table);
+                    }
+
+                    groupsContainer.appendChild(groupDiv);
+                }
+
+                // Calculate and display statistics
+                displayStatistics(data.result, layerList);
+
+                // Show results section
+                resultsDiv.classList.remove('hidden');
+
+                // Scroll to results
+                resultsDiv.scrollIntoView({ behavior: 'smooth' });
+            }
+
+            // Calculate and display statistics
+            function displayStatistics(groups, layerList) {
+                const statsDiv = document.createElement('div');
+                statsDiv.innerHTML = '<h3>各组参数统计</h3>';
+
+                // Create table for statistics
+                const statsTable = document.createElement('table');
+
+                // Create header row
+                const headerRow = document.createElement('tr');
+                const thGroup = document.createElement('th');
+                thGroup.textContent = '组别';
+                headerRow.appendChild(thGroup);
+
+                // Add N column for animal count
+                const thN = document.createElement('th');
+                thN.textContent = 'N';
+                headerRow.appendChild(thN);
+
+                for (const param of layerList) {
+                    // Mean column
+                    const thMean = document.createElement('th');
+                    thMean.textContent = `${param} 均值`;
+                    headerRow.appendChild(thMean);
+
+                    // Variance column
+                    const thVar = document.createElement('th');
+                    thVar.textContent = `${param} 方差`;
+                    headerRow.appendChild(thVar);
+                }
+
+                statsTable.appendChild(headerRow);
+
+                // Calculate stats for each group
+                for (const groupName in groups) {
+                    const groupData = groups[groupName];
+                    const row = document.createElement('tr');
+
+                    // Group name cell
+                    const tdGroup = document.createElement('td');
+                    const groupIndex = parseInt(groupName.replace('group_', ''));
+                    let groupNameDisplay = groupName;
+                    if (groupSetting.value === 'custom') {
+                        const nameInput = document.getElementById(`group-name-${groupIndex}`);
+                        if (nameInput && nameInput.value) {
+                            groupNameDisplay = nameInput.value;
+                        } else {
+                            groupNameDisplay = `组${groupIndex}`;
+                        }
+                    } else {
+                        groupNameDisplay = `组${groupIndex}`;
+                    }
+                    tdGroup.textContent = groupNameDisplay;
+                    row.appendChild(tdGroup);
+
+                    // N (animal count) cell
+                    const tdN = document.createElement('td');
+                    tdN.textContent = groupData.length;
+                    row.appendChild(tdN);
+
+                    // Calculate stats for each parameter
+                    for (const param of layerList) {
+                        // Extract parameter values for this group
+                        const values = groupData
+                            .filter(item => item[param] !== undefined && item[param] !== null)
+                            .map(item => parseFloat(item[param]));
+
+                        if (values.length > 0) {
+                            // Calculate mean
+                            const sum = values.reduce((acc, val) => acc + val, 0);
+                            const mean = sum / values.length;
+
+                            // Calculate variance
+                            const squaredDiffs = values.map(value => Math.pow(value - mean, 2));
+                            const variance = squaredDiffs.reduce((acc, val) => acc + val, 0) / values.length;
+
+                            // Mean cell
+                            const tdMean = document.createElement('td');
+                            tdMean.textContent = mean.toFixed(2);
+                            row.appendChild(tdMean);
+
+                            // Variance cell
+                            const tdVar = document.createElement('td');
+                            tdVar.textContent = variance.toFixed(2);
+                            row.appendChild(tdVar);
+                        } else {
+                            // Mean cell
+                            const tdMean = document.createElement('td');
+                            tdMean.textContent = 'N/A';
+                            row.appendChild(tdMean);
+
+                            // Variance cell
+                            const tdVar = document.createElement('td');
+                            tdVar.textContent = 'N/A';
+                            row.appendChild(tdVar);
+                        }
+                    }
+
+                    statsTable.appendChild(row);
+                }
+
+                statsDiv.appendChild(statsTable);
+                statsContainer.appendChild(statsDiv);
+            }
+
+            // Download results as CSV
+            downloadBtn.addEventListener('click', function() {
+                if (Object.keys(groupsContainer.children).length === 0) {
+                    alert('没有可下载的结果');
+                    return;
+                }
+
+                // Build CSV content
+                let csvContent = '';
+
+                // Add each group as a section
+                for (const groupDiv of groupsContainer.children) {
+                    const groupName = groupDiv.querySelector('h3').textContent;
+
+                    // Add group header
+                    csvContent += `组别: ${groupName}\n`;
+
+                    // Get the table for this group
+                    const table = groupDiv.querySelector('table');
+                    if (table) {
+                        // Add headers
+                        const headers = [];
+                        const headerRow = table.querySelector('tr');
+                        for (const th of headerRow.querySelectorAll('th')) {
+                            headers.push(th.textContent);
+                        }
+                        csvContent += headers.join(',') + '\n';
+
+                        // Add data rows
+                        for (const row of table.querySelectorAll('tr')) {
+                            if (row === headerRow) continue; // Skip header row
+
+                            const cells = [];
+                            for (const cell of row.querySelectorAll('td')) {
+                                cells.push(cell.textContent);
+                            }
+                            if (cells.length > 0) {
+                                csvContent += cells.join(',') + '\n';
+                            }
+                        }
+                    }
+
+                    // Add a blank line between groups
+                    csvContent += '\n';
+                }
+
+                // Create and download the file
+                const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', `分组结果_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+
+            // CSV upload functionality
+            const csvUpload = document.getElementById('csv-upload');
+            const uploadBtn = document.getElementById('upload-btn');
+
+            // Handle CSV file upload
+            uploadBtn.addEventListener('click', function() {
+                const file = csvUpload.files[0];
+                if (!file) {
+                    alert('请选择一个CSV文件');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const csv = e.target.result;
+                    parseCSV(csv);
+                };
+                reader.readAsText(file);
+            });
+
+            // Parse CSV and populate data
+            function parseCSV(csv) {
+                const lines = csv.split('\n');
+                if (lines.length < 2) {
+                    alert('CSV文件至少需要包含标题行和一行数据');
+                    return;
+                }
+
+                const headers = lines[0].split(',').map(header => header.trim());
+                if (headers[0] !== '原始编号') {
+                    alert('CSV文件必须以"原始编号"作为第一列');
+                    return;
+                }
+
+                // Update the parameter category field based on headers (excluding first column)
+                const params = headers.slice(1);
+                document.getElementById('param-category').value = params.join(',');
+
+                // Clear existing data
+                inputData = {};
+
+                // Parse each data row
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue; // Skip empty lines
+
+                    const values = line.split(',');
+                    if (values.length !== headers.length) {
+                        console.warn(`跳过格式不正确的行: ${line}`);
+                        continue;
+                    }
+
+                    const row = {};
+                    for (let j = 0; j < headers.length; j++) {
+                        const header = headers[j];
+                        let value = values[j].trim();
+
+                        // For numeric columns (not the first one), try to parse as number
+                        if (j > 0) {
+                            const numValue = parseFloat(value);
+                            if (!isNaN(numValue)) {
+                                value = numValue;
+                            }
+                        }
+
+                        row[header] = value;
+                    }
+
+                    // Check for duplicate ID
+                    const id = row['原始编号'];
+                    if (inputData[id]) {
+                        const overwrite = confirm(`发现重复ID "${id}"，是否覆盖?`);
+                        if (!overwrite) {
+                            continue;
+                        }
+                    }
+
+                    inputData[id] = row;
+                }
+
+                // Update CSV preview
+                updateCsvPreview();
+
+                // Update animal count if needed
+                document.getElementById('animal-count').value = Object.keys(inputData).length;
+
+                alert(`成功导入 ${Object.keys(inputData).length} 条数据`);
+            }
+        });
+    </script>
+</body>
+</html>

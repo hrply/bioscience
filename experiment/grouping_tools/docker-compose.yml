@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  grouping-tool:
+    build: .
+    ports:
+      - "20425:20425"
+    volumes:
+      - ./group_tool.db:/app/group_tool.db  # Persist the database
+    environment:
+      - FLASK_ENV=production
+    restart: unless-stopped
