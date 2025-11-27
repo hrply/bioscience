@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]  # 或你使用的主分支名，如 master
     paths:
-      - 'experiment/grouping_tool/**'  # 注意：你目录是 grouping_tools（带 s）
+      - 'experiment/grouping_tool/**'
 
 jobs:
   build:
