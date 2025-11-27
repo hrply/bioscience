@@ -31,7 +31,7 @@ To run the container:
 docker run -d -p 20425:20425 --name grouping-container grouping-tool
 ```
 
-## Usage
+## Usages
 
 1. Open your browser and navigate to http://localhost:20425
 2. Set your grouping parameters (animal count, group count, parameters, etc.)
