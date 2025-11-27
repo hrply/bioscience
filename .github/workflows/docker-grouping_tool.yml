@@ -1,43 +1,47 @@
-name: Build and Publish Grouping Tool
+name: 🐳 Build & Push Grouping Tool to GHCR
 
 on:
-  # 触发条件：推送以 "grouping-v" 开头的 tag，例如 grouping-v1.0, grouping-v2.1
+  # 方式1: 推送特定 tag（推荐）
   push:
     tags:
-      - 'grouping-tool-v*'
+      - 'v*'
+
+  # 方式2: 手动触发（方便测试）
+  workflow_dispatch:
 
 jobs:
-  build-and-push:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write  # 允许写入 GitHub Packages (ghcr.io)
+      packages: write
 
     steps:
-      - name: Checkout repository
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Log in to GitHub Container Registry
+      - name: 🔑 Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
+      - name: 🏷️ Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository_owner }}/bioscience-grouping
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest
             type=semver,pattern={{version}},value=${{ github.ref_name }}
 
-      - name: Build and push Docker image
+      - name: 🧱 Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./experiment/grouping_tool    # 👈 关键：构建上下文是子目录
-          file: ./experiment/grouping_tool/Dockerfile
+          context: ./experiment/grouping_tools
+          file: ./experiment/grouping_tools/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
