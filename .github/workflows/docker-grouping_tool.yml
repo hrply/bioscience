@@ -4,7 +4,7 @@ on:
   # 触发条件：推送以 "grouping-v" 开头的 tag，例如 grouping-v1.0, grouping-v2.1
   push:
     tags:
-      - 'grouping-tool:v*'
+      - 'grouping-tool-v*'
 
 jobs:
   build-and-push:
