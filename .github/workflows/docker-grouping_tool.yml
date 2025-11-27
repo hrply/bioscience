@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]  # 或你使用的主分支名，如 master
     paths:
-      - 'experiment/grouping_tools/**'  # 注意：你目录是 grouping_tools（带 s）
+      - 'experiment/grouping_tool/**'  # 注意：你目录是 grouping_tools（带 s）
 
 jobs:
   build:
@@ -27,9 +27,9 @@ jobs:
       - name: 🧱 Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./experiment/grouping_tools
-          file: ./experiment/grouping_tools/Dockerfile
+          context: ./experiment/grouping_tool
+          file: ./experiment/grouping_tool/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/bioscience-grouping:latest
-            ghcr.io/${{ github.repository_owner }}/bioscience-grouping:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/bioscience-grouping-tool:latest
+            ghcr.io/${{ github.repository_owner }}/bioscience-grouping-tool:${{ github.sha }}
