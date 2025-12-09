@@ -1,0 +1,13 @@
+Looking in indexes: https://mirrors.zju.edu.cn/pypi/web/simple
+Collecting pydantic
+  Downloading https://mirrors.zju.edu.cn/pypi/web/packages/5a/87/b70ad306ebb6f9b585f114d0ac2137d792b48be34d732d60e597c2f8465a/pydantic-2.12.5-py3-none-any.whl (463 kB)
+Collecting annotated-types>=0.6.0 (from pydantic)
+  Using cached https://mirrors.zju.edu.cn/pypi/web/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl (13 kB)
+Collecting pydantic-core==2.41.5 (from pydantic)
+  Using cached https://mirrors.zju.edu.cn/pypi/web/packages/a8/76/7727ef2ffa4b62fcab916686a68a0426b9b790139720e1934e8ba797e238/pydantic_core-2.41.5-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.1 MB)
+Requirement already satisfied: typing-extensions>=4.14.1 in /fast/@runtime/bio/conda/envs/lab_notebook_agent/lib/python3.10/site-packages (from pydantic) (4.15.0)
+Collecting typing-inspection>=0.4.2 (from pydantic)
+  Using cached https://mirrors.zju.edu.cn/pypi/web/packages/dc/9b/47798a6c91d8bdb567fe2698fe81e0c6b7cb7ef4d13da4114b41d239f65d/typing_inspection-0.4.2-py3-none-any.whl (14 kB)
+Installing collected packages: typing-inspection, pydantic-core, annotated-types, pydantic
+
+Successfully installed annotated-types-0.7.0 pydantic-2.12.5 pydantic-core-2.41.5 typing-inspection-0.4.2

@@ -1,0 +1,5 @@
+Looking in indexes: https://mirrors.zju.edu.cn/pypi/web/simple
+Collecting python-dotenv
+  Using cached https://mirrors.zju.edu.cn/pypi/web/packages/14/1b/a298b06749107c305e1fe0f814c6c74aea7b2f1e10989cb30f544a1b3253/python_dotenv-1.2.1-py3-none-any.whl (21 kB)
+Installing collected packages: python-dotenv
+Successfully installed python-dotenv-1.2.1

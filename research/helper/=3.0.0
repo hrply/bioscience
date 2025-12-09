@@ -1,0 +1,5 @@
+Looking in indexes: https://mirrors.zju.edu.cn/pypi/web/simple
+Collecting pypdf2
+  Downloading https://mirrors.zju.edu.cn/pypi/web/packages/8e/5e/c86a5643653825d3c913719e788e41386bee415c2b87b4f955432f2de6b2/pypdf2-3.0.1-py3-none-any.whl (232 kB)
+Installing collected packages: pypdf2
+Successfully installed pypdf2-3.0.1

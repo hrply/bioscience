@@ -211,6 +211,61 @@ def store_result_in_db(result_id, grouped_result, group_count, layers):
         conn.commit()
 
 
+@app.route('/api/save-results', methods=['POST'])
+def save_results():
+    """
+    API endpoint to save grouping results to the Docker specified directory.
+    
+    Expects JSON data with:
+    - csv_content: CSV string content to save
+    - result_id: Unique identifier for the grouping result
+    
+    Returns:
+        JSON response with status and filename
+    """
+    try:
+        req_data = request.get_json()
+        csv_content = req_data.get('csv_content', '')
+        result_id = req_data.get('result_id', '')
+        
+        if not csv_content:
+            return jsonify({'error': 'CSV content is required'}), 400
+        
+        if not result_id:
+            return jsonify({'error': 'Result ID is required'}), 400
+        
+        # Determine the directory to use
+        # In Docker container, use /grouping; in local development, use ./results
+        if os.path.exists('/grouping') or os.environ.get('DOCKER_ENV'):
+            group_dir = '/grouping'
+        else:
+            # Local development: use results directory in project folder
+            project_dir = os.path.dirname(os.path.abspath(__file__))
+            group_dir = os.path.join(project_dir, 'results')
+        
+        # Create the grouping directory if it doesn't exist
+        os.makedirs(group_dir, exist_ok=True)
+        
+        # Generate filename with date-time and unique ID
+        now = datetime.now()
+        date_time_str = now.strftime('%Y%m%d-%H%M%S')
+        filename = f"grouping_result_{date_time_str}_{result_id}.csv"
+        filepath = os.path.join(group_dir, filename)
+        
+        # Write the CSV content to file (with BOM for proper UTF-8 handling)
+        with open(filepath, 'w', encoding='utf-8-sig') as f:
+            f.write(csv_content)
+        
+        return jsonify({
+            'status': 'success',
+            'filename': filename,
+            'filepath': filepath
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+
 @app.route('/')
 def index():
     """Serve the main page of the web application"""

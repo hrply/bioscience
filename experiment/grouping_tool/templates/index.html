@@ -825,7 +825,7 @@
             }
 
             // Download results as CSV
-            downloadBtn.addEventListener('click', function() {
+            downloadBtn.addEventListener('click', async function() {
                 if (Object.keys(groupsContainer.children).length === 0) {
                     alert('没有可下载的结果');
                     return;
@@ -868,6 +868,33 @@
 
                     // Add a blank line between groups
                     csvContent += '\n';
+                }
+
+                // Get the result ID from the page
+                const resultIdText = resultIdDiv.textContent;
+                const resultId = resultIdText.replace('结果ID: ', '');
+
+                // Save to Docker directory first
+                try {
+                    const saveResponse = await fetch('/api/save-results', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            csv_content: csvContent,
+                            result_id: resultId
+                        })
+                    });
+
+                    const saveResult = await saveResponse.json();
+                    if (saveResponse.ok) {
+                        console.log('文件已保存至Docker目录:', saveResult.filename);
+                    } else {
+                        console.error('保存文件失败:', saveResult.error);
+                    }
+                } catch (error) {
+                    console.error('保存文件时出错:', error.message);
                 }
 
                 // Create and download the file
