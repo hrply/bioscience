@@ -277,4 +277,4 @@ if __name__ == '__main__':
     init_db()
 
     # Run the Flask application
-    app.run(debug=True, host='0.0.0.0', port=20425)
+    app.run(debug=True, host='0.0.0.0', port=80)
