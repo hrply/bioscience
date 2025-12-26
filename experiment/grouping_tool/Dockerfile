@@ -135,5 +135,15 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD python -c "import requests; requests.get('http://localhost:8080/', timeout=5)" || exit 1
 
-# Initialize database and run the application
-CMD ["sh", "-c", "python -c 'from app import init_db; init_db()' && python app.py"]
+# Create font configuration script
+RUN echo '#!/bin/bash\n\
+if [ "$enable_zh_CN" = "TRUE" ]; then\n\
+    echo "Setting up Chinese fonts for matplotlib..."\n\
+    python -c "import matplotlib.pyplot as plt; plt.rcParams[\"font.sans-serif\"] = [\"WenQuanYi Zen Hei\", \"DejaVu Sans\", \"sans-serif\"]; plt.rcParams[\"axes.unicode_minus\"] = False; print(\"Chinese fonts configured\")"\n\
+else\n\
+    echo "Setting up English fonts for matplotlib..."\n\
+    python -c "import matplotlib.pyplot as plt; plt.rcParams[\"font.sans-serif\"] = [\"DejaVu Sans\", \"sans-serif\"]; plt.rcParams[\"axes.unicode_minus\"] = False; print(\"English fonts configured\")"\n\
+fi' > /app/setup_fonts.sh && chmod +x /app/setup_fonts.sh
+
+# Initialize database, setup fonts and run the application
+CMD ["sh", "-c", "/app/setup_fonts.sh && python -c 'from app import init_db; init_db()' && python app.py"]

@@ -2283,20 +2283,30 @@ def generate_experiment_charts(experiment_name):
     """生成实验数据的图表图片（SVG格式，保存到data/images目录）"""
     print(f"INFO: generate_experiment_charts called for {experiment_name} with display_format={request.args.get('display_format', '原始数值')}")
     try:
-        # 确保matplotlib中文字体设置正确
+        # 强制重新配置matplotlib字体设置（解决docker save/load后的字体问题）
         enable_zh_cn = os.environ.get('enable_zh_CN', 'TRUE').upper() == 'TRUE'
+        
+        # 强制清除matplotlib缓存并重新设置
+        plt.rcParams.clear()
         if enable_zh_cn:
             plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'DejaVu Sans', 'sans-serif']
+            plt.rcParams['axes.unicode_minus'] = False
+        else:
+            plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'sans-serif']
             plt.rcParams['axes.unicode_minus'] = False
         force_regenerate = request.args.get('force', 'false').lower() == 'true'
         display_format = request.args.get('display_format', '原始数值')
         day_zero_date = request.args.get('day_zero_date', None)
         
         # 修复中文参数编码问题
-        if display_format == 'ç\x99¾å\x88\x86æ¯\x94':
+        if display_format == 'ç\x99¾å\x88\x86æ¯\x94' or 'å\x88\x86æ¯\x94' in display_format:
             display_format = '百分比'
-        elif display_format == 'æ¯\x94å\x80¼':
+        elif display_format == 'æ¯\x94å\x80¼' or 'æ¯\x94' in display_format and 'å\x80¼' in display_format:
             display_format = '比值'
+        elif display_format == 'å\x8e\x9få§\x8bæ\x95°å\x80¼' or 'å\x8e\x9f' in display_format and 'æ\x95°' in display_format:
+            display_format = '原始数值'
+        elif display_format == 'å¯¹æ\x95°å\x80¼' or 'å¯¹' in display_format and 'æ\x95°' in display_format:
+            display_format = '对数值'
         
         print(f"DEBUG: 修复后的display_format={display_format}")
         
