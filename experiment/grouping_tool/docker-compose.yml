@@ -1,0 +1,56 @@
+services:
+  grouping-tool:
+    container_name: grouping-tool
+    build:
+      context: .
+      args:
+        - enable_zh_CN=TRUE
+        # DATA_RECORDING_PASSWORD can be set here for better security
+        # - DATA_RECORDING_PASSWORD=your_secure_password
+      target: production
+    ports:
+      - "20425:8080"
+    volumes:
+      - ./group_tool.db:/app/group_tool.db  # Persist the database
+      - ./data:/data  # Mount local data directory for data recording module
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1  # Ensure Python output is not buffered
+      - DOCKER_ENV=true  # Enable Docker environment mode
+      - enable_zh_CN=TRUE  # Set at build time, used at runtime
+      - JSON_AS_ASCII=false  # Fix JSON encoding for Chinese characters
+      # DATA_RECORDING_PASSWORD=Mima12345  # Override default password if needed
+      # Note: For better security, use build-arg or external secret management
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import requests; requests.get(\"http://localhost:8080/\", timeout=5)' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Resource limits for better stability
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # Network configuration
+    networks:
+      - baota_net
+      # Uncomment to use custom bridge network
+      # - bioscience-network
+
+networks:
+  baota_net:
+    external: true
+  # bioscience-network:
+  #   driver: bridge

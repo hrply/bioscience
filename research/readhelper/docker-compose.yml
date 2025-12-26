@@ -1,0 +1,44 @@
+# 自动创建.env文件（如果不存在）
+x-env-file: &env-file
+  file: .env
+  required: false
+
+services:
+  # 文献深度挖掘助手
+  literature-miner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: literature-miner
+    ports:
+      - "0.0.0.0:20422:8501"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./temp:/app/temp
+      - ./.env:/app/.env:ro
+    environment:
+      - RAGFLOW_BASE_URL=http://ragflow:9380
+      - RAGFLOW_API_KEY=${RAGFLOW_API_KEY:-ragflow-secret-key}
+      - LLM_PROVIDER=${LLM_PROVIDER:-qwen}
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_MODEL=${LLM_MODEL}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.7}
+      - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-2048}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+volumes:
+  ragflow_data:
+    driver: local
+  ollama_data:
+    driver: local
+
+networks:
+  default:
+    name: literature-miner-network

@@ -1,0 +1,282 @@
+#1 [internal] load local bake definitions
+#1 reading from stdin 715B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 5.49kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python:3.10-slim
+#3 DONE 0.8s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 439B done
+#4 DONE 0.0s
+
+#5 [builder 1/7] FROM docker.io/library/python:3.10-slim@sha256:fb1feae978f1729094eb0405e5f9564e55b2b3b24db3261d30ba4f22c5001a8a
+#5 resolve docker.io/library/python:3.10-slim@sha256:fb1feae978f1729094eb0405e5f9564e55b2b3b24db3261d30ba4f22c5001a8a done
+#5 CACHED
+
+#6 [internal] load build context
+#6 transferring context: 6.19kB done
+#6 DONE 0.0s
+
+#7 [production 2/9] RUN if [ "TRUE" = "TRUE" ]; then         echo "Configuring Tsinghua mirrors for production stage..." &&         rm -f /etc/apt/sources.list.d/debian.sources &&         echo "Types: deb" > /etc/apt/sources.list.d/debian.sources &&         echo "URIs: https://mirrors.tuna.tsinghua.edu.cn/debian" >> /etc/apt/sources.list.d/debian.sources &&         echo "Suites: trixie trixie-updates" >> /etc/apt/sources.list.d/debian.sources &&         echo "Components: main contrib non-free non-free-firmware" >> /etc/apt/sources.list.d/debian.sources &&         echo "Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp" >> /etc/apt/sources.list.d/debian.sources &&         echo "" >> /etc/apt/sources.list.d/debian.sources &&         echo "Types: deb" >> /etc/apt/sources.list.d/debian.sources &&         echo "URIs: https://mirrors.tuna.tsinghua.edu.cn/debian-security" >> /etc/apt/sources.list.d/debian.sources &&         echo "Suites: trixie-security" >> /etc/apt/sources.list.d/debian.sources &&         echo "Components: main" >> /etc/apt/sources.list.d/debian.sources &&         echo "Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp" >> /etc/apt/sources.list.d/debian.sources &&         apt-get clean;     fi
+#7 ...
+
+#8 [builder 2/7] RUN if [ "TRUE" = "TRUE" ]; then         echo "Configuring Tsinghua mirrors for faster downloads..." &&         rm -f /etc/apt/sources.list.d/debian.sources &&         echo "Types: deb" > /etc/apt/sources.list.d/debian.sources &&         echo "URIs: https://mirrors.tuna.tsinghua.edu.cn/debian" >> /etc/apt/sources.list.d/debian.sources &&         echo "Suites: trixie trixie-updates" >> /etc/apt/sources.list.d/debian.sources &&         echo "Components: main contrib non-free non-free-firmware" >> /etc/apt/sources.list.d/debian.sources &&         echo "Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp" >> /etc/apt/sources.list.d/debian.sources &&         echo "" >> /etc/apt/sources.list.d/debian.sources &&         echo "Types: deb" >> /etc/apt/sources.list.d/debian.sources &&         echo "URIs: https://mirrors.tuna.tsinghua.edu.cn/debian-security" >> /etc/apt/sources.list.d/debian.sources &&         echo "Suites: trixie-security" >> /etc/apt/sources.list.d/debian.sources &&         echo "Components: main" >> /etc/apt/sources.list.d/debian.sources &&         echo "Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp" >> /etc/apt/sources.list.d/debian.sources &&         apt-get clean;     fi
+#8 0.225 Configuring Tsinghua mirrors for faster downloads...
+#8 DONE 0.4s
+
+#7 [production 2/9] RUN if [ "TRUE" = "TRUE" ]; then         echo "Configuring Tsinghua mirrors for production stage..." &&         rm -f /etc/apt/sources.list.d/debian.sources &&         echo "Types: deb" > /etc/apt/sources.list.d/debian.sources &&         echo "URIs: https://mirrors.tuna.tsinghua.edu.cn/debian" >> /etc/apt/sources.list.d/debian.sources &&         echo "Suites: trixie trixie-updates" >> /etc/apt/sources.list.d/debian.sources &&         echo "Components: main contrib non-free non-free-firmware" >> /etc/apt/sources.list.d/debian.sources &&         echo "Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp" >> /etc/apt/sources.list.d/debian.sources &&         echo "" >> /etc/apt/sources.list.d/debian.sources &&         echo "Types: deb" >> /etc/apt/sources.list.d/debian.sources &&         echo "URIs: https://mirrors.tuna.tsinghua.edu.cn/debian-security" >> /etc/apt/sources.list.d/debian.sources &&         echo "Suites: trixie-security" >> /etc/apt/sources.list.d/debian.sources &&         echo "Components: main" >> /etc/apt/sources.list.d/debian.sources &&         echo "Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp" >> /etc/apt/sources.list.d/debian.sources &&         apt-get clean;     fi
+#7 0.226 Configuring Tsinghua mirrors for production stage...
+#7 DONE 0.4s
+
+#9 [builder 3/7] WORKDIR /app
+#9 DONE 0.0s
+
+#10 [production 3/9] WORKDIR /app
+#10 DONE 0.0s
+
+#11 [production 4/9] RUN adduser --disabled-password --gecos '' appuser
+#11 0.524 usermod: no changes
+#11 DONE 0.6s
+
+#12 [production 5/9] RUN mkdir -p /data
+#12 DONE 0.3s
+
+#13 [builder 4/7] RUN if [ "TRUE" = "TRUE" ]; then         echo "Configuring pip to use Tsinghua mirror..." &&         pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple/ &&         pip config set install.trusted-host pypi.tuna.tsinghua.edu.cn;     else         echo "Using default pip sources";     fi
+#13 0.387 Configuring pip to use Tsinghua mirror...
+#13 1.406 Writing to /root/.config/pip/pip.conf
+#13 1.657 Writing to /root/.config/pip/pip.conf
+#13 DONE 1.8s
+
+#14 [builder 5/7] COPY requirements.txt .
+#14 DONE 0.0s
+
+#15 [builder 6/7] RUN pip install --no-cache-dir -r requirements.txt
+#15 0.738 Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple/
+#15 0.971 Collecting Flask==2.3.3
+#15 1.014   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/fd/56/26f0be8adc2b4257df20c1c4260ddd0aa396cf8e75d90ab2f7ff99bc34f9/flask-2.3.3-py3-none-any.whl (96 kB)
+#15 1.059      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 96.1/96.1 kB 2.0 MB/s eta 0:00:00
+#15 1.570 Collecting pandas==2.0.3
+#15 1.717   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/e3/59/35a2892bf09ded9c1bf3804461efe772836a5261ef5dfb4e264ce813ff99/pandas-2.0.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (12.3 MB)
+#15 3.547      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.3/12.3 MB 7.0 MB/s eta 0:00:00
+#15 4.306 Collecting numpy<2.0
+#15 4.343   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/4b/d7/ecf66c1cd12dc28b4040b15ab4d17b773b87fa9d29ca16125de01adb36cd/numpy-1.26.4-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (18.2 MB)
+#15 7.192      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 18.2/18.2 MB 6.0 MB/s eta 0:00:00
+#15 8.397 Collecting SQLAlchemy==2.0.20
+#15 8.450   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/9f/94/8a20e0b867857cacf7e1269efc02aa81866071df844a2598fa34245a50df/SQLAlchemy-2.0.20-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.0 MB)
+#15 9.108      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.0/3.0 MB 4.6 MB/s eta 0:00:00
+#15 9.208 Collecting PyMySQL==1.1.0
+#15 9.250   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/e5/30/20467e39523d0cfc2b6227902d3687a16364307260c75e6a1cb4422b0c62/PyMySQL-1.1.0-py3-none-any.whl (44 kB)
+#15 9.257      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.8/44.8 kB 7.7 MB/s eta 0:00:00
+#15 9.406 Collecting requests==2.32.5
+#15 9.452   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/1e/db/4254e3eabe8020b458f1a747140d32277ec7a271daf1d235b70dc0b4e6e3/requests-2.32.5-py3-none-any.whl (64 kB)
+#15 9.460      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.7/64.7 kB 9.1 MB/s eta 0:00:00
+#15 10.00 Collecting matplotlib==3.7.2
+#15 10.05   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/c2/da/a5622266952ab05dc3995d77689cba600e49ea9d6c51d469c077695cb719/matplotlib-3.7.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (11.6 MB)
+#15 12.06      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 11.6/11.6 MB 5.9 MB/s eta 0:00:00
+#15 13.09 Collecting orjson==3.9.10
+#15 13.13   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/17/e2/7ff96963ba854f0a807fd2783bd7d947ecb0cac7df1d802699727c418aec/orjson-3.9.10-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (138 kB)
+#15 13.15      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 138.7/138.7 kB 7.1 MB/s eta 0:00:00
+#15 13.39 Collecting Werkzeug>=2.3.7
+#15 13.43   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/2f/f9/9e082990c2585c744734f85bec79b5dae5df9c974ffee58fe421652c8e91/werkzeug-3.1.4-py3-none-any.whl (224 kB)
+#15 13.46      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 225.0/225.0 kB 6.7 MB/s eta 0:00:00
+#15 13.52 Collecting blinker>=1.6.2
+#15 13.56   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/10/cb/f2ad4230dc2eb1a74edf38f1a38b9b52277f75bef262d8908e60d957e13c/blinker-1.9.0-py3-none-any.whl (8.5 kB)
+#15 13.65 Collecting click>=8.1.3
+#15 13.69   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/98/78/01c019cdb5d6498122777c1a43056ebb3ebfeef2076d9d026bfe15583b2b/click-8.3.1-py3-none-any.whl (108 kB)
+#15 13.71      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 108.3/108.3 kB 6.3 MB/s eta 0:00:00
+#15 13.77 Collecting itsdangerous>=2.1.2
+#15 13.81   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/04/96/92447566d16df59b2a776c0fb82dbc4d9e07cd95062562af01e408583fc4/itsdangerous-2.2.0-py3-none-any.whl (16 kB)
+#15 13.89 Collecting Jinja2>=3.1.2
+#15 13.92   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl (134 kB)
+#15 13.99      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 134.9/134.9 kB 1.9 MB/s eta 0:00:00
+#15 14.32 Collecting pytz>=2020.1
+#15 14.36   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/81/c4/34e93fe5f5429d7570ec1fa436f1986fb1f00c3e0f43a589fe2bbcd22c3f/pytz-2025.2-py2.py3-none-any.whl (509 kB)
+#15 14.45      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 509.2/509.2 kB 6.0 MB/s eta 0:00:00
+#15 14.52 Collecting python-dateutil>=2.8.2
+#15 14.56   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/ec/57/56b9bcc3c9c6a792fcbaf139543cee77261f3651ca9da0c93f5c1221264b/python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+#15 14.60      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 229.9/229.9 kB 7.0 MB/s eta 0:00:00
+#15 14.68 Collecting tzdata>=2022.1
+#15 14.72   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/c7/b0/003792df09decd6849a5e39c28b513c06e84436a54440380862b5aeff25d/tzdata-2025.3-py2.py3-none-any.whl (348 kB)
+#15 14.94      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 348.5/348.5 kB 1.6 MB/s eta 0:00:00
+#15 15.55 Collecting greenlet!=0.4.17
+#15 15.62   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/b6/a8/15d0aa26c0036a15d2659175af00954aaaa5d0d66ba538345bd88013b4d7/greenlet-3.3.0-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (586 kB)
+#15 15.72      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 586.9/586.9 kB 6.0 MB/s eta 0:00:00
+#15 15.85 Collecting typing-extensions>=4.2.0
+#15 15.91   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/18/67/36e9267722cc04a6b9f15c7f3441c2363321a3ea07da7ae0c0707beb2a9c/typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+#15 15.92      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.6/44.6 kB 7.5 MB/s eta 0:00:00
+#15 16.05 Collecting certifi>=2017.4.17
+#15 16.11   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/70/7d/9bc192684cea499815ff478dfcdc13835ddf401365057044fb721ec6bddb/certifi-2025.11.12-py3-none-any.whl (159 kB)
+#15 16.14      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 159.4/159.4 kB 6.3 MB/s eta 0:00:00
+#15 16.31 Collecting urllib3<3,>=1.21.1
+#15 16.36   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/6d/b9/4095b668ea3678bf6a0af005527f39de12fb026516fb3df17495a733b7f8/urllib3-2.6.2-py3-none-any.whl (131 kB)
+#15 16.38      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 131.2/131.2 kB 8.4 MB/s eta 0:00:00
+#15 16.46 Collecting idna<4,>=2.5
+#15 16.51   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/0e/61/66938bbb5fc52dbdf84594873d5b51fb1f7c7794e9c0f5bd885f30bc507b/idna-3.11-py3-none-any.whl (71 kB)
+#15 16.53      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 71.0/71.0 kB 7.6 MB/s eta 0:00:00
+#15 16.89 Collecting charset_normalizer<4,>=2
+#15 16.94   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/36/3b/60cbd1f8e93aa25d1c669c649b7a655b0b5fb4c571858910ea9332678558/charset_normalizer-3.4.4-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (153 kB)
+#15 16.96      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 153.6/153.6 kB 6.3 MB/s eta 0:00:00
+#15 17.62 Collecting fonttools>=4.22.0
+#15 17.67   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/69/69/4ca02ee367d2c98edcaeb83fc278d20972502ee071214ad9d8ca85e06080/fonttools-4.61.1-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (4.9 MB)
+#15 18.33      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.9/4.9 MB 7.3 MB/s eta 0:00:00
+#15 18.68 Collecting kiwisolver>=1.0.1
+#15 18.72   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/d4/42/0f333164e6307a0687d1eb9ad256215aae2f4bd5d28f4653d6cd319a3ba3/kiwisolver-1.4.9-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl (1.6 MB)
+#15 18.95      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.6/1.6 MB 6.9 MB/s eta 0:00:00
+#15 19.05 Collecting packaging>=20.0
+#15 19.10   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/20/12/38679034af332785aac8774540895e234f4d07f7545804097de4b666afd8/packaging-25.0-py3-none-any.whl (66 kB)
+#15 19.11      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 66.5/66.5 kB 12.5 MB/s eta 0:00:00
+#15 19.24 Collecting pyparsing<3.1,>=2.3.1
+#15 19.29   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/6c/10/a7d0fa5baea8fe7b50f448ab742f26f52b80bfca85ac2be9d35cdd9a3246/pyparsing-3.0.9-py3-none-any.whl (98 kB)
+#15 19.30      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 98.3/98.3 kB 11.4 MB/s eta 0:00:00
+#15 19.57 Collecting contourpy>=1.0.1
+#15 19.62   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/32/5c/1ee32d1c7956923202f00cf8d2a14a62ed7517bdc0ee1e55301227fc273c/contourpy-1.3.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (325 kB)
+#15 19.65      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 325.0/325.0 kB 10.6 MB/s eta 0:00:00
+#15 19.71 Collecting cycler>=0.10
+#15 19.75   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/e7/05/c19819d5e3d95294a6f5947fb9b9629efb316b96de511b418c53d245aae6/cycler-0.12.1-py3-none-any.whl (8.3 kB)
+#15 20.31 Collecting pillow>=6.2.0
+#15 20.35   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/ed/1c/880921e98f525b9b44ce747ad1ea8f73fd7e992bafe3ca5e5644bf433dea/pillow-12.0.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (7.0 MB)
+#15 21.54      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7.0/7.0 MB 5.9 MB/s eta 0:00:00
+#15 21.98 Collecting MarkupSafe>=2.0
+#15 22.02   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/af/cd/ce6e848bbf2c32314c9b237839119c5a564a59725b53157c856e90937b7a/markupsafe-3.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (20 kB)
+#15 22.15 Collecting six>=1.5
+#15 22.18   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl (11 kB)
+#15 22.50 Installing collected packages: pytz, urllib3, tzdata, typing-extensions, six, pyparsing, PyMySQL, pillow, packaging, orjson, numpy, MarkupSafe, kiwisolver, itsdangerous, idna, greenlet, fonttools, cycler, click, charset_normalizer, certifi, blinker, Werkzeug, SQLAlchemy, requests, python-dateutil, Jinja2, contourpy, pandas, matplotlib, Flask
+#15 30.49 Successfully installed Flask-2.3.3 Jinja2-3.1.6 MarkupSafe-3.0.3 PyMySQL-1.1.0 SQLAlchemy-2.0.20 Werkzeug-3.1.4 blinker-1.9.0 certifi-2025.11.12 charset_normalizer-3.4.4 click-8.3.1 contourpy-1.3.2 cycler-0.12.1 fonttools-4.61.1 greenlet-3.3.0 idna-3.11 itsdangerous-2.2.0 kiwisolver-1.4.9 matplotlib-3.7.2 numpy-1.26.4 orjson-3.9.10 packaging-25.0 pandas-2.0.3 pillow-12.0.0 pyparsing-3.0.9 python-dateutil-2.9.0.post0 pytz-2025.2 requests-2.32.5 six-1.17.0 typing-extensions-4.15.0 tzdata-2025.3 urllib3-2.6.2
+#15 30.49 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+#15 31.17 
+#15 31.17 [notice] A new release of pip is available: 23.0.1 -> 25.3
+#15 31.17 [notice] To update, run: pip install --upgrade pip
+#15 DONE 32.0s
+
+#16 [builder 7/7] RUN if [ "TRUE" = "TRUE" ]; then         echo "Installing Chinese fonts..." &&         apt-get update &&         apt-get install -y --no-install-recommends fonts-wqy-zenhei fonts-wqy-microhei &&         apt-get clean &&         rm -rf /var/lib/apt/lists/*;     else         echo "No Chinese fonts installed";     fi
+#16 0.175 Installing Chinese fonts...
+#16 0.396 Get:1 https://mirrors.tuna.tsinghua.edu.cn/debian trixie InRelease [140 kB]
+#16 0.553 Get:2 https://mirrors.tuna.tsinghua.edu.cn/debian trixie-updates InRelease [47.3 kB]
+#16 0.598 Get:3 https://mirrors.tuna.tsinghua.edu.cn/debian-security trixie-security InRelease [43.4 kB]
+#16 0.644 Get:4 https://mirrors.tuna.tsinghua.edu.cn/debian trixie/contrib amd64 Packages [53.8 kB]
+#16 0.669 Get:5 https://mirrors.tuna.tsinghua.edu.cn/debian trixie/non-free amd64 Packages [100 kB]
+#16 0.672 Get:6 https://mirrors.tuna.tsinghua.edu.cn/debian trixie/non-free-firmware amd64 Packages [6888 B]
+#16 0.674 Get:7 https://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 Packages [9670 kB]
+#16 2.279 Get:8 https://mirrors.tuna.tsinghua.edu.cn/debian trixie-updates/main amd64 Packages [5412 B]
+#16 2.279 Get:9 https://mirrors.tuna.tsinghua.edu.cn/debian-security trixie-security/main amd64 Packages [93.7 kB]
+#16 2.929 Fetched 10.2 MB in 3s (3744 kB/s)
+#16 2.929 Reading package lists...
+#16 3.449 Reading package lists...
+#16 3.939 Building dependency tree...
+#16 4.077 Reading state information...
+#16 4.200 The following additional packages will be installed:
+#16 4.200   fontconfig fontconfig-config fonts-dejavu-core fonts-dejavu-mono libbrotli1
+#16 4.200   libexpat1 libfontconfig1 libfreetype6 libpng16-16t64
+#16 4.243 The following NEW packages will be installed:
+#16 4.243   fontconfig fontconfig-config fonts-dejavu-core fonts-dejavu-mono
+#16 4.244   fonts-wqy-microhei fonts-wqy-zenhei libbrotli1 libexpat1 libfontconfig1
+#16 4.244   libfreetype6 libpng16-16t64
+#16 4.450 0 upgraded, 11 newly installed, 0 to remove and 0 not upgraded.
+#16 4.450 Need to get 12.7 MB of archives.
+#16 4.450 After this operation, 30.3 MB of additional disk space will be used.
+#16 4.450 Get:1 https://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libexpat1 amd64 2.7.1-2 [108 kB]
+#16 4.577 Get:2 https://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libbrotli1 amd64 1.1.0-2+b7 [307 kB]
+#16 4.644 Get:3 https://mirrors.tuna.tsinghua.edu.cn/debian-security trixie-security/main amd64 libpng16-16t64 amd64 1.6.48-1+deb13u1 [283 kB]
+#16 4.681 Get:4 https://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libfreetype6 amd64 2.13.3+dfsg-1 [452 kB]
+#16 4.799 Get:5 https://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 fonts-dejavu-mono all 2.37-8 [489 kB]
+#16 4.832 Get:6 https://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 fonts-dejavu-core all 2.37-8 [840 kB]
+#16 4.943 Get:7 https://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 fontconfig-config amd64 2.15.0-2.3 [318 kB]
+#16 4.948 Get:8 https://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libfontconfig1 amd64 2.15.0-2.3 [392 kB]
+#16 4.963 Get:9 https://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 fontconfig amd64 2.15.0-2.3 [463 kB]
+#16 4.997 Get:10 https://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 fonts-wqy-microhei all 0.2.0-beta-4 [1604 kB]
+#16 5.225 Get:11 https://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 fonts-wqy-zenhei all 0.9.45-8 [7479 kB]
+#16 6.072 debconf: unable to initialize frontend: Dialog
+#16 6.072 debconf: (TERM is not set, so the dialog frontend is not usable.)
+#16 6.072 debconf: falling back to frontend: Readline
+#16 6.072 debconf: unable to initialize frontend: Readline
+#16 6.072 debconf: (Can't locate Term/ReadLine.pm in @INC (you may need to install the Term::ReadLine module) (@INC entries checked: /etc/perl /usr/local/lib/x86_64-linux-gnu/perl/5.40.1 /usr/local/share/perl/5.40.1 /usr/lib/x86_64-linux-gnu/perl5/5.40 /usr/share/perl5 /usr/lib/x86_64-linux-gnu/perl-base /usr/lib/x86_64-linux-gnu/perl/5.40 /usr/share/perl/5.40 /usr/local/lib/site_perl) at /usr/share/perl5/Debconf/FrontEnd/Readline.pm line 8, <STDIN> line 11.)
+#16 6.072 debconf: falling back to frontend: Teletype
+#16 6.082 debconf: unable to initialize frontend: Teletype
+#16 6.082 debconf: (This frontend requires a controlling tty.)
+#16 6.082 debconf: falling back to frontend: Noninteractive
+#16 6.560 Preconfiguring packages ...
+#16 6.629 Fetched 12.7 MB in 2s (7683 kB/s)
+#16 6.657 Selecting previously unselected package libexpat1:amd64.
+#16 6.657 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 5644 files and directories currently installed.)
+#16 6.663 Preparing to unpack .../00-libexpat1_2.7.1-2_amd64.deb ...
+#16 6.731 Unpacking libexpat1:amd64 (2.7.1-2) ...
+#16 6.768 Selecting previously unselected package libbrotli1:amd64.
+#16 6.770 Preparing to unpack .../01-libbrotli1_1.1.0-2+b7_amd64.deb ...
+#16 6.770 Unpacking libbrotli1:amd64 (1.1.0-2+b7) ...
+#16 6.822 Selecting previously unselected package libpng16-16t64:amd64.
+#16 6.824 Preparing to unpack .../02-libpng16-16t64_1.6.48-1+deb13u1_amd64.deb ...
+#16 6.825 Unpacking libpng16-16t64:amd64 (1.6.48-1+deb13u1) ...
+#16 6.866 Selecting previously unselected package libfreetype6:amd64.
+#16 6.868 Preparing to unpack .../03-libfreetype6_2.13.3+dfsg-1_amd64.deb ...
+#16 6.869 Unpacking libfreetype6:amd64 (2.13.3+dfsg-1) ...
+#16 6.922 Selecting previously unselected package fonts-dejavu-mono.
+#16 6.924 Preparing to unpack .../04-fonts-dejavu-mono_2.37-8_all.deb ...
+#16 6.925 Unpacking fonts-dejavu-mono (2.37-8) ...
+#16 6.985 Selecting previously unselected package fonts-dejavu-core.
+#16 6.987 Preparing to unpack .../05-fonts-dejavu-core_2.37-8_all.deb ...
+#16 7.018 Unpacking fonts-dejavu-core (2.37-8) ...
+#16 7.093 Selecting previously unselected package fontconfig-config.
+#16 7.095 Preparing to unpack .../06-fontconfig-config_2.15.0-2.3_amd64.deb ...
+#16 7.095 Unpacking fontconfig-config (2.15.0-2.3) ...
+#16 7.132 Selecting previously unselected package libfontconfig1:amd64.
+#16 7.134 Preparing to unpack .../07-libfontconfig1_2.15.0-2.3_amd64.deb ...
+#16 7.135 Unpacking libfontconfig1:amd64 (2.15.0-2.3) ...
+#16 7.177 Selecting previously unselected package fontconfig.
+#16 7.179 Preparing to unpack .../08-fontconfig_2.15.0-2.3_amd64.deb ...
+#16 7.179 Unpacking fontconfig (2.15.0-2.3) ...
+#16 7.212 Selecting previously unselected package fonts-wqy-microhei.
+#16 7.214 Preparing to unpack .../09-fonts-wqy-microhei_0.2.0-beta-4_all.deb ...
+#16 7.223 Unpacking fonts-wqy-microhei (0.2.0-beta-4) ...
+#16 7.336 Selecting previously unselected package fonts-wqy-zenhei.
+#16 7.338 Preparing to unpack .../10-fonts-wqy-zenhei_0.9.45-8_all.deb ...
+#16 7.357 Unpacking fonts-wqy-zenhei (0.9.45-8) ...
+#16 7.650 Setting up libexpat1:amd64 (2.7.1-2) ...
+#16 7.653 Setting up libbrotli1:amd64 (1.1.0-2+b7) ...
+#16 7.655 Setting up fonts-wqy-microhei (0.2.0-beta-4) ...
+#16 7.668 Setting up fonts-dejavu-mono (2.37-8) ...
+#16 7.673 Setting up libpng16-16t64:amd64 (1.6.48-1+deb13u1) ...
+#16 7.675 Setting up fonts-dejavu-core (2.37-8) ...
+#16 7.717 Setting up fontconfig-config (2.15.0-2.3) ...
+#16 7.796 debconf: unable to initialize frontend: Dialog
+#16 7.796 debconf: (TERM is not set, so the dialog frontend is not usable.)
+#16 7.796 debconf: falling back to frontend: Readline
+#16 7.796 debconf: unable to initialize frontend: Readline
+#16 7.796 debconf: (Can't locate Term/ReadLine.pm in @INC (you may need to install the Term::ReadLine module) (@INC entries checked: /etc/perl /usr/local/lib/x86_64-linux-gnu/perl/5.40.1 /usr/local/share/perl/5.40.1 /usr/lib/x86_64-linux-gnu/perl5/5.40 /usr/share/perl5 /usr/lib/x86_64-linux-gnu/perl-base /usr/lib/x86_64-linux-gnu/perl/5.40 /usr/share/perl/5.40 /usr/local/lib/site_perl) at /usr/share/perl5/Debconf/FrontEnd/Readline.pm line 8.)
+#16 7.796 debconf: falling back to frontend: Teletype
+#16 7.804 debconf: unable to initialize frontend: Teletype
+#16 7.804 debconf: (This frontend requires a controlling tty.)
+#16 7.804 debconf: falling back to frontend: Noninteractive
+#16 7.854 Setting up libfreetype6:amd64 (2.13.3+dfsg-1) ...
+#16 7.858 Setting up libfontconfig1:amd64 (2.15.0-2.3) ...
+#16 7.860 Setting up fontconfig (2.15.0-2.3) ...
+#16 7.865 Regenerating fonts cache... done.
+#16 9.892 Setting up fonts-wqy-zenhei (0.9.45-8) ...
+#16 9.915 Processing triggers for libc-bin (2.41-12) ...
+#16 DONE 10.1s
+
+#17 [production 6/9] COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+#17 DONE 1.7s
+
+#18 [production 7/9] COPY --from=builder /usr/local/bin /usr/local/bin
+#18 DONE 0.1s
+
+#19 [production 8/9] COPY . .
+#19 DONE 0.0s
+
+#20 [production 9/9] RUN chown -R appuser:appuser /app /data
+#20 DONE 0.3s
+
+#21 exporting to image
+#21 exporting layers
+#21 exporting layers 3.0s done
+#21 writing image sha256:afb20dd1a220e17158649f67ec5b4d3533adb16de4ed8149e5b276f34310ae08 done
+#21 naming to docker.io/library/grouping_tool-grouping-tool done
+#21 DONE 3.0s
+
+#22 resolving provenance for metadata file
+#22 DONE 0.0s
+ grouping_tool-grouping-tool  Built

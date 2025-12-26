@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分组微调 - 科学分组和数据记录</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .nav-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .nav-link {
+            display: inline-block;
+            margin: 0 15px;
+            padding: 8px 16px;
+            text-decoration: none;
+            color: #666;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .nav-link:hover {
+            background-color: #f8f9fa;
+        }
+
+        .nav-link.active {
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px;
+        }
+
+        .form-group {
+            flex: 1 0 300px;
+            padding: 0 10px;
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .input-row {
+            display: flex;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .input-field {
+            margin-right: 10px;
+            flex: 1;
+        }
+
+        .confirm-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            cursor: pointer;
+            width: auto;
+        }
+
+        .confirm-btn:hover {
+            background-color: #218838;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .success {
+            color: #155724;
+            background-color: #d4edda;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .data-input-section {
+            margin-top: 20px;
+        }
+
+        .download-section {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .download-btn {
+            background-color: #17a2b8;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .download-btn:hover {
+            background-color: #138496;
+        }
+
+        .execute-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: auto;
+            margin: 20px auto;
+            display: block;
+        }
+
+        .execute-btn:hover {
+            background-color: #0069d9;
+        }
+
+        .results-section {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav-header">
+            <a href="/" class="nav-link">首页</a>
+            <a href="/scientific-grouping" class="nav-link">科学分组</a>
+            <a href="/fine-tuning" class="nav-link active">分组微调</a>
+            <a href="/data-recording" class="nav-link">数据记录</a>
+            <a href="/data-export" class="nav-link">数据导出</a>
+        </div>
+
+        <h1>分组微调</h1>
+
+        <!-- 第一部分：参数设定 -->
+        <div class="section">
+            <div class="section-title">参数设定</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="param-category">参数类别 (用逗号分隔，如: 体重,血糖):</label>
+                    <input type="text" id="param-category" placeholder="体重,血糖" value="体重,摄食量">
+                </div>
+                <div class="form-group">
+                    <label for="layer-params">分层随机化参数 (用逗号分隔，如: 体重,摄食量):</label>
+                    <input type="text" id="layer-params" placeholder="体重,摄食量" value="体重,摄食量">
+                </div>
+            </div>
+        </div>
+
+        <!-- 第二部分：数据输入 -->
+        <div class="section">
+            <div class="section-title">数据输入</div>
+
+            <div style="margin-bottom: 20px;">
+                <label for="csv-upload">上传CSV文件:</label>
+                <input type="file" id="csv-upload" accept=".csv">
+                <button id="upload-btn">上传并读取</button>
+            </div>
+
+            <div class="data-input-section">
+                <div id="dynamic-inputs">
+                    <!-- Dynamic inputs will be generated here -->
+                </div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <div class="section-title">CSV数据显示</div>
+                <div id="csv-preview"></div>
+            </div>
+        </div>
+
+        <!-- 第三部分：随机微调 -->
+        <div class="section">
+            <div class="section-title">随机微调</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="simulation-count">随机模拟次数 (N):</label>
+                    <input type="number" id="simulation-count" value="100" min="10">
+                </div>
+                <div class="form-group">
+                    <label for="sample-size">每组抽样数量 (M):</label>
+                    <input type="number" id="sample-size" value="1" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="iteration-count">迭代抽样次数 (a):</label>
+                    <input type="number" id="iteration-count" value="5" min="1">
+                </div>
+            </div>
+            
+            <button id="execute-fine-tuning" class="execute-btn">执行随机微调并展示</button>
+
+            <div id="fine-tuning-results" class="results-section hidden">
+                <h3>微调结果</h3>
+                <div id="tuning-stats"></div>
+                <div id="tuning-table"></div>
+                <div class="download-section">
+                    <button id="download-tuning-results" class="download-btn">下载微调结果</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const paramCategory = document.getElementById('param-category');
+            const layerParams = document.getElementById('layer-params');
+            const dynamicInputs = document.getElementById('dynamic-inputs');
+            const csvPreview = document.getElementById('csv-preview');
+            const executeBtn = document.getElementById('execute-fine-tuning');
+            const resultsDiv = document.getElementById('fine-tuning-results');
+            const tuningStats = document.getElementById('tuning-stats');
+            const tuningTable = document.getElementById('tuning-table');
+            const downloadBtn = document.getElementById('download-tuning-results');
+
+            // Data storage
+            let inputData = {};
+            let groupingResult = null;
+
+            // Initialize with default values
+            updateDynamicInputs();
+
+            // Event listeners
+            paramCategory.addEventListener('input', updateDynamicInputs);
+
+            // Update dynamic inputs based on parameter settings
+            function updateDynamicInputs() {
+                const params = paramCategory.value.split(/[，,]/).map(param => param.trim()).filter(param => param);
+
+                // Create column headers (Original ID + parameters)
+                const columns = ['原始编号', ...params];
+
+                // Clear existing inputs
+                dynamicInputs.innerHTML = '';
+
+                // Create header row
+                const headerRow = document.createElement('div');
+                headerRow.className = 'input-row';
+
+                for (let i = 0; i < columns.length; i++) {
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'input-field';
+                    headerDiv.textContent = columns[i];
+                    headerDiv.style.fontWeight = 'bold';
+                    headerRow.appendChild(headerDiv);
+                }
+
+                // Add empty space for the button column
+                const buttonPlaceholder = document.createElement('div');
+                buttonPlaceholder.style.width = '100px';
+                headerRow.appendChild(buttonPlaceholder);
+
+                dynamicInputs.appendChild(headerRow);
+
+                // Create input row
+                const inputRow = document.createElement('div');
+                inputRow.className = 'input-row';
+
+                // Create input fields for each column
+                for (let i = 0; i < columns.length; i++) {
+                    const inputDiv = document.createElement('div');
+                    inputDiv.className = 'input-field';
+
+                    const input = document.createElement('input');
+                    input.type = columns[i] === '原始编号' ? 'text' : 'number';
+                    input.placeholder = columns[i];
+                    input.id = `${columns[i]}-input`;
+                    // 添加移动端数字键盘支持
+                    if (columns[i] !== '原始编号') {
+                        input.inputMode = 'numeric';
+                        input.pattern = '[0-9]*';
+                        input.step = 'any';
+                    }
+
+                    inputDiv.appendChild(input);
+                    inputRow.appendChild(inputDiv);
+                }
+
+                // Add confirm button
+                const buttonDiv = document.createElement('div');
+                const confirmBtn = document.createElement('button');
+                confirmBtn.className = 'confirm-btn';
+                confirmBtn.textContent = '确认输入';
+                confirmBtn.addEventListener('click', addData);
+
+                buttonDiv.appendChild(confirmBtn);
+                inputRow.appendChild(buttonDiv);
+
+                dynamicInputs.appendChild(inputRow);
+
+                // Refresh CSV preview
+                updateCsvPreview();
+            }
+
+            // Add data to storage
+            function addData() {
+                const params = paramCategory.value.split(',').map(param => param.trim()).filter(param => param);
+                const columns = ['原始编号', ...params];
+
+                // Get values from input fields
+                const row = {};
+                let hasEmptyValue = false;
+
+                for (const col of columns) {
+                    const input = document.getElementById(`${col}-input`);
+                    const value = input.value.trim();
+
+                    if (!value) {
+                        hasEmptyValue = true;
+                        break;
+                    }
+
+                    // For numeric columns, validate that input is numeric
+                    if (col !== '原始编号' && isNaN(parseFloat(value))) {
+                        alert(`列 "${col}" 必须输入数字`);
+                        return;
+                    }
+
+                    row[col] = col === '原始编号' ? value : parseFloat(value);
+                }
+
+                if (hasEmptyValue) {
+                    alert('请填写所有字段');
+                    return;
+                }
+
+                // Check for duplicate ID
+                const id = row['原始编号'];
+                if (inputData[id]) {
+                    const overwrite = confirm(`重复输入，是否覆盖?`);
+                    if (!overwrite) {
+                        return;
+                    }
+                }
+
+                // Add row to data storage
+                inputData[id] = row;
+
+                // Clear input fields
+                for (const col of columns) {
+                    document.getElementById(`${col}-input`).value = '';
+                }
+
+                // Update CSV preview
+                updateCsvPreview();
+            }
+
+            // Update CSV preview table
+            function updateCsvPreview() {
+                const params = paramCategory.value.split(',').map(param => param.trim()).filter(param => param);
+                const columns = ['原始编号', ...params];
+
+                // Create table
+                const table = document.createElement('table');
+
+                // Create header
+                const headerRow = document.createElement('tr');
+                for (const col of columns) {
+                    const th = document.createElement('th');
+                    th.textContent = col;
+                    headerRow.appendChild(th);
+                }
+                table.appendChild(headerRow);
+
+                // Create data rows
+                for (const id in inputData) {
+                    const row = inputData[id];
+                    const tr = document.createElement('tr');
+
+                    for (const col of columns) {
+                        const td = document.createElement('td');
+                        td.textContent = row[col] !== undefined ? row[col] : '';
+                        tr.appendChild(td);
+                    }
+
+                    table.appendChild(tr);
+                }
+
+                csvPreview.innerHTML = '';
+                csvPreview.appendChild(table);
+            }
+
+            // CSV upload functionality
+            document.getElementById('upload-btn').addEventListener('click', function() {
+                const fileInput = document.getElementById('csv-upload');
+                const file = fileInput.files[0];
+
+                if (!file) {
+                    alert('请选择CSV文件');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const csvText = e.target.result;
+                    parseCSV(csvText);
+                };
+                reader.readAsText(file, 'UTF-8');
+            });
+
+            function parseCSV(csvText) {
+                const lines = csvText.trim().split('\n');
+                if (lines.length < 2) {
+                    alert('CSV文件格式错误');
+                    return;
+                }
+
+                const headers = lines[0].split(',').map(h => h.trim());
+                inputData = {};
+
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split(',').map(v => v.trim());
+                    const row = {};
+
+                    for (let j = 0; j < headers.length; j++) {
+                        const value = values[j];
+                        if (headers[j] === '原始编号') {
+                            row[headers[j]] = value;
+                        } else {
+                            row[headers[j]] = parseFloat(value) || 0;
+                        }
+                    }
+
+                    if (row['原始编号']) {
+                        inputData[row['原始编号']] = row;
+                    }
+                }
+
+                // Update parameter categories based on CSV headers
+                const params = headers.filter(h => h !== '原始编号');
+                paramCategory.value = params.join(',');
+                updateDynamicInputs();
+            }
+
+            // Execute fine-tuning
+            executeBtn.addEventListener('click', async function() {
+                // Validate inputs
+                const simulationCount = parseInt(document.getElementById('simulation-count').value);
+                const sampleSize = parseInt(document.getElementById('sample-size').value);
+                const iterationCount = parseInt(document.getElementById('iteration-count').value);
+
+                if (isNaN(simulationCount) || simulationCount < 10) {
+                    alert('随机模拟次数必须是大于等于10的整数');
+                    return;
+                }
+
+                if (isNaN(sampleSize) || sampleSize < 1) {
+                    alert('每组抽样数量必须是大于等于1的整数');
+                    return;
+                }
+
+                if (isNaN(iterationCount) || iterationCount < 1) {
+                    alert('迭代抽样次数必须是大于等于1的整数');
+                    return;
+                }
+
+                const layerList = layerParams.value.split(/[，,]/).map(layer => layer.trim()).filter(layer => layer);
+                if (layerList.length === 0) {
+                    alert('请指定至少一个分层随机化参数');
+                    return;
+                }
+
+                // Check if we have input data
+                const dataCount = Object.keys(inputData).length;
+                if (dataCount === 0) {
+                    alert('请先输入数据');
+                    return;
+                }
+
+                // Build CSV string from input data
+                const params = paramCategory.value.split(',').map(param => param.trim()).filter(param => param);
+                const columns = ['原始编号', ...params];
+
+                // Create CSV header
+                let csvString = columns.join(',') + '\n';
+
+                // Add data rows
+                for (const id in inputData) {
+                    const row = inputData[id];
+                    const rowValues = columns.map(col => row[col] !== undefined ? row[col] : '');
+                    csvString += rowValues.join(',') + '\n';
+                }
+
+                // Show loading state
+                const originalText = executeBtn.textContent;
+                executeBtn.textContent = '微调中...';
+                executeBtn.disabled = true;
+
+                try {
+                    const response = await fetch('/api/advanced-fine-tuning', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            data: csvString,
+                            layers: layerList,
+                            simulation_count: simulationCount,
+                            sample_size: sampleSize,
+                            iteration_count: iterationCount
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        displayFineTuningResults(result);
+                    } else {
+                        alert(`错误: ${result.error || '未知错误'}`);
+                    }
+                } catch (error) {
+                    alert(`请求失败: ${error.message}`);
+                } finally {
+                    executeBtn.textContent = originalText;
+                    executeBtn.disabled = false;
+                }
+            });
+
+            // Display fine-tuning results
+            function displayFineTuningResults(data) {
+                tuningStats.innerHTML = '';
+                tuningTable.innerHTML = '';
+
+                // Display statistics
+                if (data.statistics) {
+                    const statsDiv = document.createElement('div');
+                    statsDiv.innerHTML = `
+                        <h4>统计信息</h4>
+                        <p>最佳抽样数量: ${data.statistics.best_sample_size}</p>
+                        <p>最小分组结果变异性: ${data.statistics.min_variance.toFixed(4)}</p>
+                        <p>改进幅度: ${data.statistics.improvement.toFixed(4)}</p>
+                    `;
+                    tuningStats.appendChild(statsDiv);
+                }
+
+                // Create results table
+                const table = document.createElement('table');
+                
+                // Create header
+                const headerRow = document.createElement('tr');
+                const headers = ['抽样数量', '各组均值', '各组方差', '分组结果变异性'];
+                for (const header of headers) {
+                    const th = document.createElement('th');
+                    th.textContent = header;
+                    headerRow.appendChild(th);
+                }
+                table.appendChild(headerRow);
+
+                // Create data rows
+                if (data.trend_data && Array.isArray(data.trend_data)) {
+                    for (const item of data.trend_data) {
+                        const row = document.createElement('tr');
+                        
+                        // Sample size
+                        const tdSampleSize = document.createElement('td');
+                        tdSampleSize.textContent = item.sample_size;
+                        row.appendChild(tdSampleSize);
+                        
+                        // Group means
+                        const tdMeans = document.createElement('td');
+                        tdMeans.textContent = item.group_means ? item.group_means.join(', ') : '';
+                        row.appendChild(tdMeans);
+                        
+                        // Group variances
+                        const tdVariances = document.createElement('td');
+                        tdVariances.textContent = item.group_variances ? item.group_variances.join(', ') : '';
+                        row.appendChild(tdVariances);
+                        
+                        // Variance of means
+                        const tdVariance = document.createElement('td');
+                        tdVariance.textContent = item.variance_of_means ? item.variance_of_means.toFixed(4) : '';
+                        row.appendChild(tdVariance);
+                        
+                        table.appendChild(row);
+                    }
+                }
+
+                tuningTable.appendChild(table);
+
+                // Store data for download
+                groupingResult = data;
+
+                // Show results section
+                resultsDiv.classList.remove('hidden');
+
+                // Scroll to results
+                resultsDiv.scrollIntoView({ behavior: 'smooth' });
+            }
+
+            // Download fine-tuning results
+            downloadBtn.addEventListener('click', function() {
+                if (!groupingResult || !groupingResult.trend_data) {
+                    alert('没有可下载的数据');
+                    return;
+                }
+
+                // Create CSV content
+                let csvContent = '抽样数量,各组均值,各组方差,分组结果变异性\n';
+                
+                for (const item of groupingResult.trend_data) {
+                    const means = item.group_means ? item.group_means.join(';') : '';
+                    const variances = item.group_variances ? item.group_variances.join(';') : '';
+                    const varianceOfMeans = item.variance_of_means ? item.variance_of_means.toFixed(4) : '';
+                    
+                    csvContent += `${item.sample_size},"${means}","${variances}",${varianceOfMeans}\n`;
+                }
+
+                // Create download link
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                
+                const now = new Date();
+                const dateStr = now.toISOString().slice(0, 19).replace(/[:-]/g, '');
+                const filename = `fine_tuning_result_${dateStr}.csv`;
+                
+                link.setAttribute('href', url);
+                link.setAttribute('download', filename);
+                link.style.visibility = 'hidden';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        });
+    </script>
+</body>
+</html>

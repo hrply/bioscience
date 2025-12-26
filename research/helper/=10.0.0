@@ -1,0 +1,2 @@
+Looking in indexes: https://mirrors.zju.edu.cn/pypi/web/simple
+Requirement already satisfied: Pillow in /fast/@runtime/bio/conda/envs/lab_notebook_agent/lib/python3.10/site-packages (12.0.0)

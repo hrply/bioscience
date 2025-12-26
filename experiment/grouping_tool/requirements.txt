@@ -1,0 +1,23 @@
+# Requirements for the Flask application
+# Web framework
+Flask==3.1.2
+
+# Data processing
+pandas==2.0.3
+numpy<2.0
+
+# Database
+SQLAlchemy==2.0.20
+PyMySQL==1.1.0
+
+# HTTP requests
+requests==2.32.5
+
+# Visualization
+matplotlib==3.7.2
+
+# JSON processing (high performance)
+orjson==3.9.10
+
+# Note: The following standard library modules are used but don't need to be installed:
+# - csv, re, traceback, datetime, os, random, json, base64, hashlib, uuid, warnings, io

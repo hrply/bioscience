@@ -1,0 +1,140 @@
+# 核心依赖
+streamlit>=1.28.0
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+
+# HTTP客户端
+requests>=2.31.0
+httpx>=0.24.0
+
+# 文本处理
+markdown>=3.4.0
+pyyaml>=6.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
+# PDF处理
+PyMuPDF>=1.23.0
+pdfplumber>=0.9.0
+PyPDF2>=3.0.0
+
+# 文本分析和NLP
+nltk>=3.8.0
+spacy>=3.6.0
+scikit-learn>=1.3.0
+transformers>=4.30.0
+torch>=2.0.0
+
+# 数据库
+sqlite3
+chromadb>=0.4.0
+networkx>=3.1.0
+
+# 日期时间处理
+python-dateutil>=2.8.0
+
+# 图像处理
+pillow>=10.0.0
+
+# 数据处理
+pandas>=2.0.0
+numpy>=1.24.0
+
+# 开发和测试工具
+pytest>=7.4.0
+black>=23.0.0
+flake8>=6.0.0
+
+# 性能监控
+psutil>=5.9.0
+
+# 文献解析
+bibtexparser>=1.4.0
+scholarly>=1.7.0
+arxiv>=1.4.0
+
+# DOI解析
+doi2bib>=1.0.0
+crossref-commons>=0.0.7
+
+# 向量化和相似度计算
+sentence-transformers>=2.2.0
+faiss-cpu>=1.7.0
+
+# 可视化
+plotly>=5.15.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# 缓存
+diskcache>=5.6.0
+
+# RAGFlow和大模型相关依赖
+# RAGFlow客户端依赖
+urllib3>=1.26.0
+certifi>=2023.7.22
+
+# 大模型API客户端
+openai>=1.0.0
+anthropic>=0.7.0
+
+# 本地模型支持
+ollama>=0.1.0
+
+# 异步支持
+asyncio
+aiohttp>=3.8.0
+
+# 数据验证和序列化
+marshmallow>=3.20.0
+
+# 配置管理
+configparser>=5.3.0
+
+# 日志处理
+loguru>=0.7.0
+
+# 文件处理
+python-magic>=0.4.27
+
+# 进度条
+tqdm>=4.65.0
+
+# 时间处理
+pytz>=2023.3
+
+# 哈希计算
+hashlib
+
+# JSON处理
+orjson>=3.9.0
+
+# 正则表达式增强
+regex>=2023.6.3
+
+# 文本相似度计算
+textdistance>=4.6.0
+
+# 网络请求增强
+tenacity>=8.2.0
+
+# 并发处理
+concurrent-futures>=3.1.1
+
+# 内存优化
+memory-profiler>=0.61.0
+
+# 数据结构优化
+more-itertools>=10.1.0
+
+# 字符串处理
+python-slugify>=8.0.0
+
+# 类型检查
+mypy>=1.5.0
+
+# 代码格式化
+isort>=5.12.0
+
+# 安全检查
+bandit>=1.7.0

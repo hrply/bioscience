@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>密码验证测试</title>
+</head>
+<body>
+    <h1>密码验证测试</h1>
+    <div>
+        <input type="password" id="access-password" placeholder="输入密码">
+        <button onclick="testVerifyPassword()">验证</button>
+        <div id="password-error" style="color: red;"></div>
+    </div>
+    
+    <script>
+        // 测试verifyPassword函数是否可用
+        function testVerifyPassword() {
+            if (typeof verifyPassword === 'function') {
+                console.log('verifyPassword函数存在，调用中...');
+                verifyPassword();
+            } else {
+                console.error('verifyPassword函数未定义');
+                document.getElementById('password-error').textContent = '函数未定义错误';
+            }
+        }
+        
+        // 验证密码
+        function verifyPassword() {
+            console.log('verifyPassword函数被调用');
+            const password = document.getElementById('access-password').value;
+            const passwordError = document.getElementById('password-error');
+            
+            if (password === 'test') {
+                passwordError.textContent = '密码正确';
+                passwordError.style.color = 'green';
+            } else {
+                passwordError.textContent = '密码错误';
+                passwordError.style.color = 'red';
+            }
+        }
+        
+        console.log('页面加载完成');
+    </script>
+</body>
+</html>
