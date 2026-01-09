@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生物信息学数据管理系统</title>
+    <link href="libs/bootstrap/bootstrap.min.css?v=1.0.0" rel="stylesheet">
+    <link href="libs/bootstrap-icons.css?v=1.0.0" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=1.0.0">
+    <style>
+        /* 自定义样式 */
+        .dashboard-card {
+            transition: transform 0.2s ease-in-out;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-2px);
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover {
+            background-color: rgba(0,123,255,0.1);
+        }
+        .nav-link.active {
+            background-color: rgba(0,123,255,0.2);
+        }
+        
+        /* 文件列表样式优化 */
+        #import-file-list {
+            border: 1px solid #dee2e6;
+        }
+        
+        #import-file-list .form-check {
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0;
+            border-bottom: 1px solid #f8f9fa;
+            min-width: 600px;
+        }
+        
+        #import-file-list .form-check:hover {
+            background-color: #f8f9fa;
+        }
+        
+        #import-file-list .form-check-input {
+            margin-top: 0.25rem;
+        }
+        
+        .file-name-container {
+            min-width: 300px;
+            max-width: 500px;
+        }
+        
+        .file-size-container {
+            min-width: 80px;
+            text-align: right;
+            font-family: monospace;
+        }
+        
+        /* 模态框尺寸优化 */
+        .modal-xl {
+            max-width: 90vw;
+        }
+        
+        @media (min-width: 1200px) {
+            .modal-xl {
+                max-width: 1100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-database"></i> 生物信息学数据管理系统
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#dashboard" data-section="dashboard">仪表板</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#projects" data-section="projects">项目管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#import" data-section="import">导入下载</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#processed" data-section="processed">处理数据</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#browse" data-section="browse">浏览数据</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#directory" data-section="directory">目录结构</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#config" data-section="config">配置管理</a>
+                    </li>
+                </ul>
+                <form class="d-flex">
+                    <input class="form-control me-2" type="search" id="globalSearch" placeholder="搜索项目...">
+                    <button class="btn btn-outline-light" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- 仪表板部分 -->
+        <section id="dashboard" class="content-section">
+            <h2 class="mb-4">数据概览</h2>
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">总项目数</h5>
+                            <p class="card-text display-4" id="total-projects">0</p>
+                            <small>已管理的项目</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">转录组数据</h5>
+                            <p class="card-text display-4" id="transcriptomics-count">0</p>
+                            <small>RNA-seq, scRNA-seq等</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">蛋白组学</h5>
+                            <p class="card-text display-4" id="proteomics-count">0</p>
+                            <small>蛋白质组, 磷酸化组</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">其他数据</h5>
+                            <p class="card-text display-4" id="other-count">0</p>
+                            <small>质谱流式, 多组学</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">最近添加的项目</h5>
+                            <button class="btn btn-sm btn-outline-primary" onclick="refreshRecentProjects()">
+                                <i class="bi bi-arrow-clockwise"></i> 刷新
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="recent-projects-list" class="list-group">
+                                <!-- 最近项目将在这里动态加载 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">数据类型分布</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="data-type-chart" width="400" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">待处理下载</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="pending-downloads" class="alert alert-info" style="display: none;">
+                                <i class="bi bi-info-circle"></i> 
+                                发现 <span id="pending-count">0</span> 个待处理的下载文件夹，
+                                <a href="#" onclick="showSection('import')" class="alert-link">点击这里处理</a>
+                            </div>
+                            <div id="no-pending" class="text-muted">
+                                <i class="bi bi-check-circle"></i> 没有待处理的下载文件
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 项目管理部分 -->
+        <section id="projects" class="content-section" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>项目管理</h2>
+                <div>
+                    <button class="btn btn-success me-2" onclick="showAddDataToProjectModal()">
+                        <i class="bi bi-folder-plus"></i> 添加数据到现有项目
+                    </button>
+                    <button class="btn btn-primary" onclick="showCreateProjectModal()">
+                        <i class="bi bi-plus-circle"></i> 创建新项目
+                    </button>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <select class="form-select" id="project-filter-type">
+                        <option value="">所有类型</option>
+                        <option value="transcriptomics">转录组</option>
+                        <option value="scrna-seq">单细胞转录组</option>
+                        <option value="proteomics">蛋白组</option>
+                        <option value="phosphoproteomics">磷酸化组</option>
+                        <option value="cytof">质谱流式</option>
+                        <option value="multiomics">多组学</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="project-filter-organism">
+                        <option value="">所有物种</option>
+                        <option value="human">人类</option>
+                        <option value="mouse">小鼠</option>
+                        <option value="rat">大鼠</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" class="form-control" id="project-filter-search" placeholder="搜索项目名称、DOI或描述...">
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-primary w-100" onclick="applyProjectFilters()">
+                        <i class="bi bi-funnel"></i> 筛选
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>项目编号</th>
+                                    <th>项目名称</th>
+                                    <th>数据类型</th>
+                                    <th>DOI/数据库编号</th>
+                                    <th>物种</th>
+                                    <th>创建日期</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="projects-table-body">
+                                <!-- 项目行将在这里动态加载 -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <nav aria-label="项目分页">
+                        <ul class="pagination justify-content-center" id="projects-pagination">
+                            <!-- 分页将在这里动态加载 -->
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </section>
+
+        <!-- 导入下载部分 -->
+        <section id="import" class="content-section" style="display: none;">
+            <h2 class="mb-4">导入下载文件</h2>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">下载目录扫描</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <span>扫描目录: <code>/bioraw/downloads</code></span>
+                                    <small class="text-muted d-block">映射自宿主机: <code>/ssd/bioraw/downloads</code></small>
+                                </div>
+                                <button class="btn btn-primary" onclick="scanDownloadDirectory()">
+                                    <i class="bi bi-arrow-clockwise"></i> 重新扫描
+                                </button>
+                            </div>
+                            
+                            <div id="download-scan-results">
+                                <!-- 扫描结果将在这里显示 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">导入设置</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="import-settings">
+                                <div class="mb-3">
+                                    <label for="target-directory" class="form-label">目标目录</label>
+                                    <input type="text" class="form-control" id="target-directory" value="/bioraw/data" readonly>
+                                    <div class="form-text">映射自宿主机: <code>/ssd/bioraw/raw_data</code></div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="auto-detect-doi" checked>
+                                        <label class="form-check-label" for="auto-detect-doi">
+                                            自动检测DOI和数据库编号
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="auto-import-citation" checked>
+                                        <label class="form-check-label" for="auto-import-citation">
+                                            自动导入引文文件
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="auto-organize-folders" checked>
+                                        <label class="form-check-label" for="auto-organize-folders">
+                                            自动按数据类型组织文件夹
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="delete-after-import">
+                                        <label class="form-check-label" for="delete-after-import">
+                                            导入后删除原文件
+                                        </label>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 处理数据部分 -->
+        <section id="processed" class="content-section" style="display: none;">
+            <h2 class="mb-4">处理数据管理</h2>
+            
+            <ul class="nav nav-tabs" id="processedTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="processed-list-tab" data-bs-toggle="tab" data-bs-target="#processed-list" type="button" role="tab">
+                        <i class="bi bi-list"></i> 处理数据列表
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="analysis-import-tab" data-bs-toggle="tab" data-bs-target="#analysis-import" type="button" role="tab">
+                        <i class="bi bi-upload"></i> 导入分析数据
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="file-import-tab" data-bs-toggle="tab" data-bs-target="#file-import" type="button" role="tab">
+                        <i class="bi bi-file-plus"></i> 导入单个文件
+                    </button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="processedTabContent">
+                <!-- 处理数据列表 -->
+                <div class="tab-pane fade show active" id="processed-list" role="tabpanel">
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">筛选条件</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="processed-project-filter" class="form-label">项目</label>
+                                        <select class="form-select" id="processed-project-filter">
+                                            <option value="">所有项目</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="processed-type-filter" class="form-label">分析类型</label>
+                                        <select class="form-select" id="processed-type-filter">
+                                            <option value="">所有类型</option>
+                                            <option value="transcriptomics">转录组分析</option>
+                                            <option value="scrna-seq">单细胞分析</option>
+                                            <option value="spatial">空间转录组分析</option>
+                                            <option value="proteomics">蛋白组分析</option>
+                                            <option value="differential">差异分析</option>
+                                            <option value="pathway">通路分析</option>
+                                            <option value="visualization">可视化</option>
+                                            <option value="other">其他</option>
+                                        </select>
+                                    </div>
+                                    <button class="btn btn-primary w-100" onclick="loadProcessedData()">
+                                        <i class="bi bi-search"></i> 筛选
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="card-title mb-0">处理数据列表</h6>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="loadProcessedData()">
+                                        <i class="bi bi-arrow-clockwise"></i> 刷新
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>标题</th>
+                                                    <th>项目</th>
+                                                    <th>分析类型</th>
+                                                    <th>日期</th>
+                                                    <th>操作</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="processed-data-table-body">
+                                                <!-- 处理数据行将在这里动态加载 -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 导入分析数据 -->
+                <div class="tab-pane fade" id="analysis-import" role="tabpanel">
+                    <div class="row mt-3">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">分析目录扫描</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <span>扫描目录: <code>/bioraw/analysis</code></span>
+                                            <small class="text-muted d-block">映射自宿主机: <code>/ssd/bioraw/analysis</code></small>
+                                        </div>
+                                        <button class="btn btn-primary" onclick="scanAnalysisDirectory()">
+                                            <i class="bi bi-arrow-clockwise"></i> 重新扫描
+                                        </button>
+                                    </div>
+                                    
+                                    <div id="analysis-scan-results">
+                                        <!-- 扫描结果将在这里显示 -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">导入说明</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted small">
+                                        系统会自动扫描分析目录中包含Markdown说明文件的文件夹，并解析其中的元数据信息。
+                                    </p>
+                                    <h6>Markdown文件格式：</h6>
+                                    <pre class="bg-light p-2 small">
+# 分析结果标题
+
+**项目ID**: PRJ001
+**分析类型**: transcriptomics
+**软件**: DESeq2
+**参数**: --method wald
+**日期**: 2024-01-15
+**描述**: 差异表达分析结果</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 导入单个文件 -->
+                <div class="tab-pane fade" id="file-import" role="tabpanel">
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">文件信息</h6>
+                                </div>
+                                <div class="card-body">
+                                    <form id="file-import-form">
+                                        <div class="mb-3">
+                                            <label for="file-path" class="form-label">文件路径</label>
+                                            <input type="text" class="form-control" id="file-path" placeholder="输入文件完整路径">
+                                            <div class="form-text">例如: /path/to/analysis_result.csv</div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="file-title" class="form-label">标题</label>
+                                            <input type="text" class="form-control" id="file-title" placeholder="处理数据标题">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="file-project" class="form-label">关联项目</label>
+                                            <select class="form-select" id="file-project">
+                                                <option value="">选择项目（可选）</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="file-analysis-type" class="form-label">分析类型</label>
+                                            <select class="form-select" id="file-analysis-type">
+                                                <option value="other">其他</option>
+                                                <option value="transcriptomics">转录组分析</option>
+                                                <option value="scrna-seq">单细胞分析</option>
+                                                <option value="spatial">空间转录组分析</option>
+                                                <option value="proteomics">蛋白组分析</option>
+                                                <option value="differential">差异分析</option>
+                                                <option value="pathway">通路分析</option>
+                                                <option value="visualization">可视化</option>
+                                            </select>
+                                        </div>
+                                        <button type="button" class="btn btn-primary" onclick="importProcessedFile()">
+                                            <i class="bi bi-upload"></i> 导入文件
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">使用说明</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">
+                                        此功能用于导入单个处理数据文件。文件将被复制到处理结果目录中，并创建相应的数据库记录。
+                                    </p>
+                                    <h6>支持的文件类型：</h6>
+                                    <ul>
+                                        <li>CSV数据文件</li>
+                                        <li>Excel表格</li>
+                                        <li>图像文件 (PNG, JPG, SVG)</li>
+                                        <li>PDF报告</li>
+                                        <li>其他分析结果文件</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 浏览数据部分 -->
+        <section id="browse" class="content-section" style="display: none;">
+            <h2 class="mb-4">浏览数据</h2>
+            
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <select class="form-select" id="browse-filter-type">
+                        <option value="">所有类型</option>
+                        <option value="transcriptomics">转录组</option>
+                        <option value="scrna-seq">单细胞转录组</option>
+                        <option value="spatial">空间转录组</option>
+                        <option value="proteomics">蛋白质组</option>
+                        <option value="phosphoproteomics">磷酸化组</option>
+                        <option value="cytof">质谱流式</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="browse-filter-organism">
+                        <option value="">所有物种</option>
+                        <option value="human">人类</option>
+                        <option value="mouse">小鼠</option>
+                        <option value="rat">大鼠</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" class="form-control" id="browse-filter-search" placeholder="搜索项目、文件或标签...">
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-primary w-100" onclick="applyBrowseFilters()">
+                        <i class="bi bi-funnel"></i> 应用筛选
+                    </button>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">项目树</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="project-tree" style="max-height: 600px; overflow-y: auto;">
+                                <!-- 项目树将在这里显示 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">文件列表</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="file-list">
+                                <!-- 文件列表将在这里显示 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 目录结构部分 -->
+        <section id="directory" class="content-section" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>目录结构</h2>
+                <div>
+                    <button class="btn btn-outline-primary me-2" onclick="refreshDirectoryTree()">
+                        <i class="bi bi-arrow-clockwise"></i> 刷新
+                    </button>
+                    <button class="btn btn-primary" onclick="exportDirectoryTree()">
+                        <i class="bi bi-download"></i> 导出Markdown
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div id="directory-tree-content">
+                        <!-- 目录树内容将在这里显示 -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 配置管理部分 -->
+        <section id="config" class="content-section" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>元数据配置管理</h2>
+                <div>
+                    <button class="btn btn-outline-primary me-2" onclick="refreshMetadataConfig()">
+                        <i class="bi bi-arrow-clockwise"></i> 刷新
+                    </button>
+                    <button class="btn btn-outline-success me-2" id="edit-sort-order-btn" onclick="toggleSortOrderEdit()">
+                        <i class="bi bi-sort-numeric-down"></i> 修改字段排序
+                    </button>
+                    <button class="btn btn-success" onclick="showAddConfigModal()">
+                        <i class="bi bi-plus-circle"></i> 添加字段
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab 导航 -->
+            <ul class="nav nav-tabs mb-4" id="configTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="active-fields-tab" data-bs-toggle="tab" data-bs-target="#active-fields" 
+                            type="button" role="tab" aria-controls="active-fields" aria-selected="true">
+                        <i class="bi bi-list-ul"></i> 活跃字段
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="deleted-fields-tab" data-bs-toggle="tab" data-bs-target="#deleted-fields" 
+                            type="button" role="tab" aria-controls="deleted-fields" aria-selected="false"
+                            onclick="loadDeletedFields()">
+                        <i class="bi bi-trash"></i> 已删除字段
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab 内容 -->
+            <div class="tab-content" id="configTabsContent">
+                <!-- 活跃字段标签页 -->
+                <div class="tab-pane fade show active" id="active-fields" role="tabpanel" aria-labelledby="active-fields-tab">
+                    <div class="card">
+                        <div class="card-body">
+                            <div id="metadata-config-list">
+                                <!-- 配置列表将在这里显示 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 已删除字段标签页 -->
+                <div class="tab-pane fade" id="deleted-fields" role="tabpanel" aria-labelledby="deleted-fields-tab">
+                    <div class="card">
+                        <div class="card-body">
+                            <div id="deleted-config-list">
+                                <!-- 已删除配置列表将在这里显示 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- 创建项目模态框 -->
+    <div class="modal fade" id="createProjectModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">创建新项目</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="create-project-form">
+                        <!-- 动态表单容器 -->
+                        <div id="metadata-form-container"></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="createProject()">创建项目</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 项目详情模态框 -->
+    <div class="modal fade" id="projectDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">项目详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="project-detail-content">
+                    <!-- 项目详情将在这里动态加载 -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" onclick="editProject(selectedProject?.id)">编辑项目</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteProject(selectedProject?.id)">删除项目</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 高级导入项目模态框 -->
+    <div class="modal fade" id="importProjectModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">高级数据导入</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- 项目选择区域 -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">项目设置</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="projectMode" id="newProjectMode" value="new" checked>
+                                                <label class="form-check-label" for="newProjectMode">
+                                                    <i class="bi bi-plus-circle"></i> 新建项目
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="projectMode" id="existingProjectMode" value="existing">
+                                                <label class="form-check-label" for="existingProjectMode">
+                                                    <i class="bi bi-folder"></i> 选择已有项目
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-9">
+                                            <!-- 新建项目表单 -->
+                                            <div id="newProjectForm">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <label for="import-project-id" class="form-label">项目编号</label>
+                                                        <input type="text" class="form-control" id="import-project-id" readonly>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label for="import-project-name" class="form-label">项目名称 <span class="text-danger">*</span></label>
+                                                        <input type="text" class="form-control" id="import-project-name" required>
+                                                    </div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <div class="col-12">
+                                                        <div id="new-project-metadata-fields"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- 选择已有项目表单 -->
+                                            <div id="existingProjectForm" style="display: none;">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <label for="select-existing-project" class="form-label">选择项目</label>
+                                                        <select class="form-select" id="select-existing-project">
+                                                            <option value="">请选择项目...</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="alert alert-info mt-4">
+                                                            <i class="bi bi-info-circle"></i>
+                                                            选择项目后可设置本次导入的数据类型和样本信息
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <div class="col-12">
+                                                        <div id="existing-project-metadata-fields"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 文件选择区域 -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="card-title mb-0">文件选择</h6>
+                                    <div>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllFiles()">
+                                            <i class="bi bi-check-all"></i> 全选
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="deselectAllFiles()">
+                                            <i class="bi bi-x-square"></i> 取消全选
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div id="import-file-list" style="max-height: 400px; overflow-x: auto; overflow-y: auto;">
+                                        <!-- 文件列表将在这里动态加载 -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 导入选项 -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="delete-after-import">
+                                <label class="form-check-label" for="delete-after-import">
+                                    <i class="bi bi-trash"></i> 导入后删除原文件（仅删除已勾选的文件）
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmAdvancedImport()">
+                        <i class="bi bi-upload"></i> 确认导入
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加数据到现有项目模态框 -->
+    <div class="modal fade" id="addDataToProjectModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">添加数据到现有项目</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">选择目标项目</h6>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div id="project-selection-list" style="max-height: 400px; overflow-y: auto;">
+                                        <!-- 项目列表将在这里动态加载 -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">下载目录扫描</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <span>扫描目录: <code>/bioraw/downloads</code></span>
+                                        <button class="btn btn-primary" onclick="scanDownloadDirectoryForProject()">
+                                            <i class="bi bi-arrow-clockwise"></i> 重新扫描
+                                        </button>
+                                    </div>
+                                    
+                                    <div id="download-scan-results-for-project">
+                                        <!-- 扫描结果将在这里显示 -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-success" onclick="confirmAddDataToProject()">添加到项目</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="libs/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="libs/chartjs/chart.umd.js"></script>
+    <script src="metadata-form.js?v=1.0.0"></script>
+    <script src="metadata-config-ui.js?v=1.0.0"></script>
+    <script src="app.js?v=1.0.0"></script>
+</body>
+</html>

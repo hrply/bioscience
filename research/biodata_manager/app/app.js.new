@@ -1,0 +1,1209 @@
+// 生物信息学数据管理系统 JavaScript
+
+// 全局变量
+let projects = [];
+let currentSection = 'dashboard';
+let selectedProject = null;
+let pendingDownloads = [];
+let dataTypeChart = null;
+
+// 初始化应用
+document.addEventListener('DOMContentLoaded', function() {
+    initializeApp();
+});
+
+function initializeApp() {
+    // 加载本地存储的项目数据
+    loadProjects();
+    
+    // 设置导航事件监听
+    setupNavigation();
+    
+    // 设置表单事件监听
+    setupForms();
+    
+    // 初始化仪表板
+    updateDashboard();
+    
+    // 检查待处理的下载
+    checkPendingDownloads();
+    
+    // 设置搜索功能
+    setupSearch();
+    
+    // 设置导入相关事件监听
+    setupImportEvents();
+    
+    // 设置模态框可访问性
+    setupModalAccessibility();
+}
+
+function setupImportEvents() {
+    // 监听项目模式切换
+    const newProjectMode = document.getElementById('newProjectMode');
+    const existingProjectMode = document.getElementById('existingProjectMode');
+    
+    if (newProjectMode) {
+        newProjectMode.addEventListener('change', function() {
+            if (this.checked) toggleProjectMode('new');
+        });
+    }
+    
+    if (existingProjectMode) {
+        existingProjectMode.addEventListener('change', function() {
+            if (this.checked) toggleProjectMode('existing');
+        });
+    }
+    
+    // 监听已有项目选择
+    const selectExistingProject = document.getElementById('select-existing-project');
+    if (selectExistingProject) {
+        selectExistingProject.addEventListener('change', function() {
+            if (this.value) {
+                loadProjectData(this.value);
+            }
+        });
+    }
+}
+
+// 导航功能
+function setupNavigation() {
+    const navLinks = document.querySelectorAll('a[data-section]');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const section = this.getAttribute('data-section');
+            showSection(section);
+        });
+    });
+}
+
+function showSection(sectionName) {
+    // 隐藏所有部分
+    const sections = document.querySelectorAll('.content-section');
+    sections.forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    // 显示选中的部分
+    const targetSection = document.getElementById(sectionName);
+    if (targetSection) {
+        targetSection.style.display = 'block';
+    }
+    
+    // 更新导航激活状态
+    const navLinks = document.querySelectorAll('a[data-section]');
+    navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('data-section') === sectionName) {
+            link.classList.add('active');
+        }
+    });
+    
+    currentSection = sectionName;
+    
+    // 根据部分加载相应数据
+    switch(sectionName) {
+        case 'dashboard':
+            updateDashboard();
+            break;
+        case 'projects':
+            loadProjectsTable();
+            break;
+        case 'import':
+            scanDownloadDirectory();
+            break;
+        case 'processed':
+            loadProcessedData();
+            scanAnalysisDirectory();
+            updateProjectSelectors();
+            break;
+        case 'browse':
+            loadBrowseData();
+            break;
+        case 'directory':
+            loadDirectoryTree();
+            break;
+        case 'config':
+            loadMetadataConfigList();
+            break;
+    }
+}
+
+// 项目管理功能
+function loadProjects() {
+    const stored = localStorage.getItem('biodata_projects');
+    if (stored) {
+        projects = JSON.parse(stored);
+    } else {
+        // 初始化一些示例项目
+        projects = [
+            {
+                id: 'PRJ001',
+                title: '结肠癌多组学研究',
+                doi: '10.1038/s41467-024-45665-6',
+                dbId: 'GSE250498',
+                dbLink: 'https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE250498',
+                dataType: 'multiomics',
+                organism: 'human',
+                authors: 'Zhang L; Wang M; Liu J',
+                journal: 'Nature Communications',
+                description: '结肠癌患者的多组学分析，包括转录组、蛋白组和质谱流式数据',
+                tags: ['结肠癌', '多组学', 'CITE-seq', 'CyTOF'],
+                createdDate: '2024-01-15',
+                path: '/bioraw/data/PRJ001_Colon_Cancer_Multiomics',
+                files: [
+                    { name: 'cite-seq_data.h5ad', size: '2.3 GB', type: 'h5ad' },
+                    { name: 'cytof_data.fcs', size: '156 MB', type: 'fcs' },
+                    { name: 'scrna-seq_counts.mtx', size: '890 MB', type: 'mtx' }
+                ]
+            }
+        ];
+        saveProjects();
+    }
+}
+
+function saveProjects() {
+    localStorage.setItem('biodata_projects', JSON.stringify(projects));
+}
+
+function createProject() {
+    const form = document.getElementById('create-project-form');
+    const formContainer = document.getElementById('metadata-form-container');
+    
+    // 验证表单
+    const validation = metadataFormRenderer.validateForm(formContainer);
+    if (!validation.valid) {
+        showAlert('请填写所有必填字段:\n' + validation.errors.join('\n'), 'danger');
+        return;
+    }
+    
+    // 收集表单数据
+    const formData = metadataFormRenderer.collectFormData(formContainer);
+    
+    const project = {
+        id: generateProjectId(),
+        title: formData.title || '',
+        doi: formData.doi || '',
+        dbId: formData.dbId || '',
+        dbLink: formData.dbLink || '',
+        dataType: formData.dataType || 'other',
+        organism: formData.organism || 'human',
+        authors: formData.authors || '',
+        journal: formData.journal || '',
+        description: formData.description || '',
+        tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [],
+        createdDate: new Date().toISOString().split('T')[0],
+        path: `/bioraw/data/${generateProjectId()}_${sanitizeFileName(formData.title || '')}`,
+        files: []
+    };
+    
+    // 处理引文文件
+    const citationFile = document.getElementById('citation-file').files[0];
+    if (citationFile) {
+        parseCitationFile(citationFile, project);
+    }
+    
+    projects.push(project);
+    saveProjects();
+    
+    // 创建项目目录和markdown文件
+    createProjectDirectory(project);
+    
+    // 关闭模态框
+    const modal = bootstrap.Modal.getInstance(document.getElementById('createProjectModal'));
+    modal.hide();
+    
+    // 重置表单
+    form.reset();
+    
+    // 刷新显示
+    if (currentSection === 'projects') {
+        loadProjectsTable();
+    }
+    updateDashboard();
+    
+    // 显示成功消息
+    showAlert('项目创建成功！', 'success');
+}
+
+function generateProjectId() {
+    const maxId = projects.reduce((max, project) => {
+        const idNum = parseInt(project.id.replace('PRJ', ''));
+        return idNum > max ? idNum : max;
+    }, 0);
+    return `PRJ${String(maxId + 1).padStart(3, '0')}`;
+}
+
+function sanitizeFileName(fileName) {
+    return fileName.replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 50);
+}
+
+function createProjectDirectory(project) {
+    // 这里应该调用后端API来创建实际的目录和文件
+    // 现在只是模拟
+    console.log('Creating project directory:', project.path);
+    generateProjectMarkdown(project);
+}
+
+function generateProjectMarkdown(project) {
+    const markdown = `# ${project.title}
+
+## 项目信息
+- **项目编号**: ${project.id}
+- **DOI**: ${project.doi || 'N/A'}
+- **数据库编号**: ${project.dbId || 'N/A'}
+- **数据库链接**: ${project.dbLink || 'N/A'}
+- **数据类型**: ${getDataTypeLabel(project.dataType)}
+- **物种**: ${getOrganismLabel(project.organism)}
+- **创建日期**: ${project.createdDate}
+
+## 文献信息
+- **作者**: ${project.authors || 'N/A'}
+- **期刊**: ${project.journal || 'N/A'}
+
+## 项目描述
+${project.description || '暂无描述'}
+
+## 标签
+${project.tags.map(tag => `\`${tag}\``).join(', ')}
+
+## 文件结构
+\`\`\`
+${project.path}/
+├── README.md
+${project.files.map(file => `├── ${file.name} (${file.size})`).join('\n')}
+\`\`\`
+
+## 文件列表
+| 文件名 | 大小 | 类型 | 描述 |
+|--------|------|------|------|
+${project.files.map(file => `| ${file.name} | ${file.size} | ${file.type} | |`).join('\n')}
+
+---
+*此文件由生物信息学数据管理系统自动生成*
+`;
+
+    // 这里应该调用后端API来保存markdown文件
+    console.log('Generated markdown for project:', project.id);
+    console.log(markdown);
+}
+
+function getDataTypeLabel(dataType) {
+    const labels = {
+        'transcriptomics': '转录组',
+        'scrna-seq': '单细胞转录组',
+        'spatial': '空间转录组',
+        'proteomics': '蛋白组',
+        'phosphoproteomics': '磷酸化组',
+        'cytof': '质谱流式',
+        'multiomics': '多组学',
+        'other': '其他'
+    };
+    return labels[dataType] || dataType;
+}
+
+function getOrganismLabel(organism) {
+    const labels = {
+        'human': '人类 (Homo sapiens)',
+        'mouse': '小鼠 (Mus musculus)',
+        'rat': '大鼠 (Rattus norvegicus)',
+        'other': '其他'
+    };
+    return labels[organism] || organism;
+}
+
+// 引文文件解析
+function parseCitationFile(file, project) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const content = e.target.result;
+        
+        if (file.name.endsWith('.ris')) {
+            parseRISFile(content, project);
+        } else if (file.name.endsWith('.enw')) {
+            parseENWFile(content, project);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function parseRISFile(content, project) {
+    // RIS格式解析
+    const lines = content.split('\n');
+    const fields = {};
+    
+    lines.forEach(line => {
+        const match = line.match(/^([A-Z]{2})\s+-\s+(.+)$/);
+        if (match) {
+            const [, tag, value] = match;
+            fields[tag] = value;
+        }
+    });
+    
+    // 提取信息并更新项目
+    if (fields.TI) project.title = fields.TI;
+    if (fields.AU) project.authors = fields.AU.replace(/ and /g, '; ');
+    if (fields.JO) project.journal = fields.JO;
+    if (fields.DO) project.doi = fields.DO;
+    if (fields.AB) project.description = fields.AB;
+}
+
+function parseENWFile(content, project) {
+    // EndNote格式解析
+    const lines = content.split('\n');
+    const fields = {};
+    
+    lines.forEach(line => {
+        const match = line.match(/^%([A-Z])\s+(.+)$/);
+        if (match) {
+            const [, tag, value] = match;
+            fields[tag] = value;
+        }
+    });
+    
+    // 提取信息并更新项目
+    if (fields.T) project.title = fields.T;
+    if (fields.A) project.authors = fields.A.replace(/ and /g, '; ');
+    if (fields.J) project.journal = fields.J;
+    if (fields.R) project.doi = fields.R;
+    if (fields.X) project.description = fields.X;
+}
+
+// 仪表板功能
+function updateDashboard() {
+    // 更新统计数据
+    document.getElementById('total-projects').textContent = projects.length;
+    
+    const transcriptomicsCount = projects.filter(p => 
+        ['transcriptomics', 'scrna-seq', 'spatial'].includes(p.dataType)
+    ).length;
+    document.getElementById('transcriptomics-count').textContent = transcriptomicsCount;
+    
+    const proteomicsCount = projects.filter(p => 
+        ['proteomics', 'phosphoproteomics'].includes(p.dataType)
+    ).length;
+    document.getElementById('proteomics-count').textContent = proteomicsCount;
+    
+    const otherCount = projects.filter(p => 
+        ['cytof', 'multiomics', 'other'].includes(p.dataType)
+    ).length;
+    document.getElementById('other-count').textContent = otherCount;
+    
+    // 更新最近项目列表
+    updateRecentProjects();
+    
+    // 更新图表
+    updateCharts();
+}
+
+function updateRecentProjects() {
+    const recentProjectsList = document.getElementById('recent-projects-list');
+    const recentProjects = projects
+        .sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate))
+        .slice(0, 5);
+    
+    if (recentProjects.length === 0) {
+        recentProjectsList.innerHTML = '<p class="text-muted">暂无项目</p>';
+        return;
+    }
+    
+    recentProjectsList.innerHTML = recentProjects.map(project => `
+        <div class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">${project.title}</h6>
+                <small class="text-muted">${project.createdDate}</small>
+            </div>
+            <div class="mb-1">
+                <span class="badge data-type-badge type-${project.dataType}">${getDataTypeLabel(project.dataType)}</span>
+                <span class="badge bg-secondary">${project.id}</span>
+            </div>
+            <p class="mb-1 text-truncate">${project.description || '暂无描述'}</p>
+            <small>
+                ${project.doi ? `DOI: ${project.doi}` : ''}
+                ${project.dbId ? ` | ${project.dbId}` : ''}
+            </small>
+        </div>
+    `).join('');
+}
+
+function updateCharts() {
+    // 数据类型分布图
+    const ctx = document.getElementById('data-type-chart');
+    if (ctx) {
+        // 销毁现有图表实例
+        if (dataTypeChart) {
+            dataTypeChart.destroy();
+        }
+        
+        const dataTypeCounts = {};
+        projects.forEach(project => {
+            dataTypeCounts[project.dataType] = (dataTypeCounts[project.dataType] || 0) + 1;
+        });
+        
+        dataTypeChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(dataTypeCounts).map(type => getDataTypeLabel(type)),
+                datasets: [{
+                    data: Object.values(dataTypeCounts),
+                    backgroundColor: [
+                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+}
+
+// 下载目录扫描功能
+function checkPendingDownloads() {
+    // 这里应该调用后端API来检查下载目录
+    // 现在只是模拟
+    const pendingCount = Math.floor(Math.random() * 3);
+    
+    const pendingDiv = document.getElementById('pending-downloads');
+    const noPendingDiv = document.getElementById('no-pending');
+    
+    if (pendingCount > 0) {
+        document.getElementById('pending-count').textContent = pendingCount;
+        pendingDiv.style.display = 'block';
+        noPendingDiv.style.display = 'none';
+    } else {
+        pendingDiv.style.display = 'none';
+        noPendingDiv.style.display = 'block';
+    }
+}
+
+function scanDownloadDirectory() {
+    const resultsDiv = document.getElementById('download-scan-results');
+    resultsDiv.innerHTML = '<div class="text-center"><div class="loading-spinner"></div> 正在扫描下载目录...</div>';
+    
+    // 设置超时处理
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+        controller.abort();
+        resultsDiv.innerHTML = '<div class="alert alert-warning">扫描超时，请稍后重试。可能是因为文件数量较多，建议分批处理。</div>';
+    }, 25000); // 25秒超时
+    
+    // 调用后端API扫描目录
+    fetch('/api/scan-downloads', {
+        signal: controller.signal,
+        timeout: 30000
+    })
+        .then(response => {
+            clearTimeout(timeoutId);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(results => {
+            displayScanResults(results);
+        })
+        .catch(error => {
+            clearTimeout(timeoutId);
+            console.error('扫描下载目录失败:', error);
+            let errorMessage = '扫描下载目录失败';
+            if (error.name === 'AbortError') {
+                errorMessage = '扫描超时，请稍后重试。可能是因为文件数量较多，建议分批处理。';
+            } else if (error.message) {
+                errorMessage = '扫描下载目录失败: ' + error.message;
+            }
+            resultsDiv.innerHTML = `<div class="alert alert-warning">${errorMessage}</div>`;
+        });
+}
+
+function displayScanResults(results) {
+    const resultsDiv = document.getElementById('download-scan-results');
+    
+    if (results.length === 0) {
+        resultsDiv.innerHTML = '<div class="alert alert-info">没有发现待处理的下载文件夹</div>';
+        return;
+    }
+    
+    resultsDiv.innerHTML = results.map((result, index) => `
+        <div class="scan-result-item">
+            <div class="scan-result-header">
+                <div class="scan-result-title">${result.name}</div>
+                <div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="previewImport(${index})">
+                        <i class="bi bi-eye"></i> 预览
+                    </button>
+                    <button class="btn btn-sm btn-success" onclick="importDownload(${index})">
+                        <i class="bi bi-download"></i> 导入
+                    </button>
+                </div>
+            </div>
+            <div class="scan-result-path">
+                <div><strong>相对路径:</strong> <code>downloads/${result.relativePath || result.name}</code></div>
+                <div class="text-muted small"><strong>完整路径:</strong> ${result.path}</div>
+            </div>
+            <div class="scan-result-info">
+                <span><i class="bi bi-hdd"></i> ${result.size}</span>
+                <span><i class="bi bi-file-earmark"></i> ${result.files} 个文件</span>
+                ${result.citationFile ? '<span><i class="bi bi-file-text"></i> 包含引文文件</span>' : ''}
+            </div>
+            ${result.detectedDOI || result.detectedDbId ? `
+                <div class="detected-info">
+                    <div class="detected-info-item">
+                        <span class="detected-info-label">检测到的DOI:</span>
+                        <span class="detected-info-value">${result.detectedDOI || 'N/A'}</span>
+                    </div>
+                    <div class="detected-info-item">
+                        <span class="detected-info-label">检测到的数据库编号:</span>
+                        <span class="detected-info-value">${result.detectedDbId || 'N/A'}</span>
+                    </div>
+                    <div class="detected-info-item">
+                        <span class="detected-info-label">检测到的数据类型:</span>
+                        <span class="detected-info-value">${getDataTypeLabel(result.detectedType)}</span>
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+    `).join('');
+    
+    pendingDownloads = results;
+}
+
+function previewImport(index) {
+    const result = pendingDownloads[index];
+    
+    // 使用高级导入模态框作为预览（它会加载完整的文件列表）
+    showAdvancedImportModal(result);
+}
+
+function importDownload(index) {
+    const result = pendingDownloads[index];
+    
+    // 显示高级导入模态框
+    showAdvancedImportModal(result);
+}
+
+function showAdvancedImportModal(downloadResult) {
+    // 生成新的项目ID
+    const newProjectId = generateProjectId();
+    document.getElementById('import-project-id').value = newProjectId;
+    
+    // 设置默认值
+    document.getElementById('import-project-name').value = downloadResult.name;
+    document.getElementById('import-data-type').value = downloadResult.data_type || 'transcriptomics';
+    document.getElementById('import-doi').value = downloadResult.db_ids ? downloadResult.db_ids.join(', ') : '';
+    document.getElementById('import-description').value = `从下载目录导入，包含 ${downloadResult.files} 个文件，总大小 ${downloadResult.size}`;
+    
+    // 重置项目模式选择
+    document.getElementById('newProjectMode').checked = true;
+    document.getElementById('existingProjectMode').checked = false;
+    toggleProjectMode('new');
+    
+    // 加载项目列表
+    loadExistingProjects();
+    
+    // 加载文件列表
+    loadFileList(downloadResult.name);
+    
+    // 显示模态框
+    const modalElement = document.getElementById('importProjectModal');
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
+}
+
+function toggleProjectMode(mode) {
+    const newForm = document.getElementById('newProjectForm');
+    const existingForm = document.getElementById('existingProjectForm');
+    
+    if (mode === 'new') {
+        newForm.style.display = 'block';
+        existingForm.style.display = 'none';
+        document.getElementById('import-project-id').disabled = false;
+    } else {
+        newForm.style.display = 'none';
+        existingForm.style.display = 'block';
+        document.getElementById('import-project-id').disabled = true;
+    }
+}
+
+function loadExistingProjects() {
+    fetch('/api/projects')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('select-existing-project');
+            select.innerHTML = '<option value="">请选择项目...</option>';
+            
+            data.forEach(project => {
+                const option = document.createElement('option');
+                option.value = project.id;
+                option.textContent = `${project.id} - ${project.name}`;
+                select.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('加载项目列表失败:', error);
+            showAlert('加载项目列表失败', 'danger');
+        });
+}
+
+function loadFileList(folderName) {
+    fetch(`/api/list-folder-files?folder=${encodeURIComponent(folderName)}`)
+        .then(response => response.json())
+        .then(data => {
+            const fileList = document.getElementById('import-file-list');
+            fileList.innerHTML = '';
+            
+            // 设置容器样式
+            fileList.style.display = 'block';
+            fileList.style.width = '100%';
+            fileList.style.overflowX = 'auto';
+            
+            if (data.files && data.files.length > 0) {
+                // 创建表头
+                const header = document.createElement('div');
+                header.className = 'd-flex align-items-center p-2 border-bottom bg-light fw-bold';
+                header.style.minWidth = '1200px';
+                header.innerHTML = `
+                    <div style="width: 40px; flex-shrink: 0;">
+                        <input class="form-check-input" type="checkbox" id="select-all-header" checked>
+                    </div>
+                    <div style="flex: 1; min-width: 800px;">文件名 / 路径</div>
+                    <div style="width: 100px; flex-shrink: 0; text-align: right;">大小</div>
+                `;
+                fileList.appendChild(header);
+                
+                // 添加文件项
+                data.files.forEach((file, index) => {
+                    const fileItem = createFileItem(file, index);
+                    fileList.appendChild(fileItem);
+                });
+                
+                // 添加全选功能
+                const selectAllHeader = document.getElementById('select-all-header');
+                if (selectAllHeader) {
+                    selectAllHeader.addEventListener('change', function() {
+                        const checkboxes = fileList.querySelectorAll('input[type="checkbox"]:not(#select-all-header)');
+                        checkboxes.forEach(cb => cb.checked = this.checked);
+                    });
+                }
+                
+                // 显示文件统计
+                const stats = document.createElement('div');
+                stats.className = 'p-2 border-top bg-light small text-muted';
+                stats.innerHTML = `共 ${data.files.length} 个文件，总大小 ${data.total_size || 'N/A'}`;
+                fileList.appendChild(stats);
+                
+            } else {
+                fileList.innerHTML = '<div class="alert alert-info m-2">未找到文件</div>';
+            }
+        })
+        .catch(error => {
+            console.error('加载文件列表失败:', error);
+            document.getElementById('import-file-list').innerHTML = 
+                '<div class="alert alert-danger m-2">加载文件列表失败</div>';
+        });
+}
+
+function createFileItem(file, index) {
+    const div = document.createElement('div');
+    div.className = 'd-flex align-items-center p-2 border-bottom';
+    div.style.minWidth = '1200px'; // 确保最小宽度与表头一致
+    
+    // 创建复选框列 - 固定宽度
+    const checkboxContainer = document.createElement('div');
+    checkboxContainer.style.width = '40px';
+    checkboxContainer.style.flexShrink = '0';
+    checkboxContainer.style.display = 'flex';
+    checkboxContainer.style.alignItems = 'center';
+    
+    const checkbox = document.createElement('input');
+    checkbox.className = 'form-check-input';
+    checkbox.type = 'checkbox';
+    checkbox.value = file.path;
+    checkbox.id = `file-${index}`;
+    checkbox.checked = true; // 默认选中所有文件
+    
+    checkboxContainer.appendChild(checkbox);
+    
+    // 创建文件名列 - 占据剩余空间
+    const label = document.createElement('label');
+    label.style.flex = '1';
+    label.style.minWidth = '800px';
+    label.style.whiteSpace = 'nowrap';
+    label.style.overflow = 'hidden';
+    label.style.textOverflow = 'ellipsis';
+    label.style.cursor = 'pointer';
+    label.style.margin = '0';
+    label.style.display = 'flex';
+    label.style.flexDirection = 'column';
+    label.style.justifyContent = 'center';
+    label.innerHTML = `
+        <div class="fw-medium text-truncate" title="${file.name}">${file.name}</div>
+        <small class="text-muted text-truncate d-block" title="${file.relativePath}" style="font-size: 0.75rem;">${file.relativePath}</small>
+    `;
+    label.htmlFor = `file-${index}`;
+    
+    // 创建大小列 - 固定宽度
+    const fileSize = document.createElement('div');
+    fileSize.style.width = '100px';
+    fileSize.style.flexShrink = '0';
+    fileSize.style.textAlign = 'right';
+    fileSize.style.paddingRight = '0';
+    fileSize.className = 'text-muted small';
+    fileSize.textContent = file.size || 'N/A';
+    
+    div.appendChild(checkboxContainer);
+    div.appendChild(label);
+    div.appendChild(fileSize);
+    
+    return div;
+}
+
+function selectAllFiles() {
+    const checkboxes = document.querySelectorAll('#import-file-list input[type="checkbox"]');
+    checkboxes.forEach(checkbox => checkbox.checked = true);
+}
+
+function deselectAllFiles() {
+    const checkboxes = document.querySelectorAll('#import-file-list input[type="checkbox"]');
+    checkboxes.forEach(checkbox => checkbox.checked = false);
+}
+
+// 项目表格功能
+function loadProjectsTable() {
+    const tbody = document.getElementById('projects-table-body');
+    
+    if (projects.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">暂无项目</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = projects.map(project => `
+        <tr>
+            <td><span class="badge bg-primary">${project.id}</span></td>
+            <td>
+                <a href="#" onclick="showProjectDetail('${project.id}')" class="text-decoration-none">
+                    ${project.title}
+                </a>
+            </td>
+            <td><span class="badge data-type-badge type-${project.dataType}">${getDataTypeLabel(project.dataType)}</span></td>
+            <td>
+                <small>
+                    ${project.doi ? `DOI: ${project.doi}<br>` : ''}
+                    ${project.dbId ? `${project.dbId}` : ''}
+                </small>
+            </td>
+            <td>${getOrganismLabel(project.organism)}</td>
+            <td>${project.createdDate}</td>
+            <td>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" onclick="showProjectDetail('${project.id}')" title="查看详情">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="editProject('${project.id}')" title="编辑">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="deleteProject('${project.id}')" title="删除">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function showProjectDetail(projectId) {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+    
+    selectedProject = project;
+    
+    const content = document.getElementById('project-detail-content');
+    content.innerHTML = `
+        <div class="row">
+            <div class="col-md-8">
+                <h4>${project.title}</h4>
+                <div class="mb-3">
+                    <span class="badge data-type-badge type-${project.dataType}">${getDataTypeLabel(project.dataType)}</span>
+                    <span class="badge bg-secondary">${project.id}</span>
+                    <span class="badge bg-info">${getOrganismLabel(project.organism)}</span>
+                </div>
+                
+                <h6>项目信息</h6>
+                <table class="table table-sm">
+                    <tr><td>DOI:</td><td>${project.doi || 'N/A'}</td></tr>
+                    <tr><td>数据库编号:</td><td>${project.dbId || 'N/A'}</td></tr>
+                    <tr><td>数据库链接:</td><td>${project.dbLink ? `<a href="${project.dbLink}" target="_blank">${project.dbLink}</a>` : 'N/A'}</td></tr>
+                    <tr><td>作者:</td><td>${project.authors || 'N/A'}</td></tr>
+                    <tr><td>期刊:</td><td>${project.journal || 'N/A'}</td></tr>
+                    <tr><td>创建日期:</td><td>${project.createdDate}</td></tr>
+                    <tr><td>项目路径:</td><td><code>${project.path}</code></td></tr>
+                </table>
+                
+                <h6>项目描述</h6>
+                <p>${project.description || '暂无描述'}</p>
+                
+                <h6>标签</h6>
+                <div>
+                    ${project.tags.map(tag => `<span class="badge bg-secondary me-1">${tag}</span>`).join('')}
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <h6>文件列表</h6>
+                <div class="list-group">
+                    ${project.files.length > 0 ? project.files.map(file => `
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-file-earmark me-2"></i>
+                                    ${file.name}
+                                </div>
+                                <small class="text-muted">${file.size}</small>
+                            </div>
+                        </div>
+                    `).join('') : '<p class="text-muted">暂无文件</p>'}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('projectDetailModal'));
+    modal.show();
+}
+
+function editProject(projectId) {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+    
+    // 准备表单数据
+    const formData = {
+        title: project.title || '',
+        doi: project.doi || '',
+        db_id: project.dbId || '',
+        db_link: project.dbLink || '',
+        data_type: project.dataType || '',
+        organism: project.organism || '',
+        authors: project.authors || '',
+        journal: project.journal || '',
+        description: project.description || '',
+        tags: project.tags ? project.tags.join(', ') : ''
+    };
+    
+    // 更改模态框标题和按钮为编辑模式
+    const modalTitle = document.querySelector('#createProjectModal .modal-title');
+    const submitButton = document.querySelector('#createProjectModal .modal-footer .btn-primary');
+    
+    if (!modalTitle || !submitButton) {
+        console.error('无法找到模态框元素');
+        showAlert('无法打开编辑界面，请刷新页面重试', 'danger');
+        return;
+    }
+    
+    modalTitle.textContent = '编辑项目';
+    submitButton.textContent = '更新项目';
+    submitButton.onclick = function() { updateProject(projectId); };
+    
+    // 渲染动态表单并填充数据
+    const formContainer = document.getElementById('metadata-form-container');
+    metadataFormRenderer.renderForm(formContainer, formData).catch(error => {
+        console.error('渲染动态表单失败:', error);
+        showAlert('加载表单配置失败，请刷新页面重试', 'danger');
+    });
+    
+    // 显示创建项目模态框
+    const modalElement = document.getElementById('createProjectModal');
+    if (!modalElement) {
+        console.error('无法找到模态框元素');
+        showAlert('无法打开编辑界面，请刷新页面重试', 'danger');
+        return;
+    }
+    
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
+    
+    // 当模态框关闭时，恢复为创建模式
+    modalElement.addEventListener('hidden.bs.modal', function() {
+        modalTitle.textContent = '创建新项目';
+        submitButton.textContent = '创建项目';
+        submitButton.onclick = function() { createProject(); };
+        document.getElementById('create-project-form').reset();
+    }, { once: true });
+}
+
+function updateProject(projectId) {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+    
+    const formContainer = document.getElementById('metadata-form-container');
+    
+    // 验证表单
+    const validation = metadataFormRenderer.validateForm(formContainer);
+    if (!validation.valid) {
+        showAlert('请填写所有必填字段:\n' + validation.errors.join('\n'), 'danger');
+        return;
+    }
+    
+    // 收集表单数据
+    const formData = metadataFormRenderer.collectFormData(formContainer);
+    
+    // 更新项目信息
+    project.title = formData.title || '';
+    project.doi = formData.doi || '';
+    project.dbId = formData.dbId || '';
+    project.dbLink = formData.dbLink || '';
+    project.dataType = formData.dataType || 'other';
+    project.organism = formData.organism || 'human';
+    project.authors = formData.authors || '';
+    project.journal = formData.journal || '';
+    project.description = formData.description || '';
+    project.tags = formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+    
+    // 保存项目
+    saveProjects();
+    
+    // 重新生成README文件
+    createProjectDirectory(project);
+    
+    // 关闭模态框
+    const modal = bootstrap.Modal.getInstance(document.getElementById('createProjectModal'));
+    modal.hide();
+    
+    // 重置表单
+    document.getElementById('create-project-form').reset();
+    
+    // 刷新显示
+    loadProjectsTable();
+    updateDashboard();
+    
+    // 如果项目详情模态框正在显示，刷新它
+    if (selectedProject && selectedProject.id === projectId) {
+        showProjectDetail(projectId);
+    }
+    
+    showAlert('项目更新成功', 'success');
+}
+
+function deleteProject(projectId) {
+    if (!confirm('确定要删除这个项目吗？此操作不可撤销。')) {
+        return;
+    }
+    
+    const index = projects.findIndex(p => p.id === projectId);
+    if (index > -1) {
+        projects.splice(index, 1);
+        saveProjects();
+        
+        showAlert('项目已删除', 'success');
+        loadProjectsTable();
+        updateDashboard();
+    }
+}
+
+// 浏览数据功能
+function loadBrowseData() {
+    // 加载项目树
+    const projectTree = document.getElementById('project-tree');
+    projectTree.innerHTML = '<div class="text-center py-4"><div class="spinner-border" role="status"></div> 加载中...</div>';
+    
+    // 从API获取项目列表
+    fetch('/api/projects')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(projectList => {
+            if (projectList.length === 0) {
+                projectTree.innerHTML = '<p class="text-muted p-3">暂无项目</p>';
+                return;
+            }
+            
+            // 按数据类型分组
+            const groupedProjects = {};
+            projectList.forEach(project => {
+                const dataType = project.data_type || project.dataType;
+                if (!groupedProjects[dataType]) {
+                    groupedProjects[dataType] = [];
+                }
+                groupedProjects[dataType].push(project);
+            });
+            
+            projectTree.innerHTML = Object.keys(groupedProjects).map(dataType => `
+                <div class="tree-item" onclick="toggleDataType('${dataType}')">
+                    <i class="bi bi-folder-fill me-2"></i>
+                    ${getDataTypeLabel(dataType)} (${groupedProjects[dataType].length})
+                </div>
+                <div class="tree-children" id="tree-${dataType}">
+                    ${groupedProjects[dataType].map(project => `
+                        <div class="tree-item" onclick="selectProject('${project.id}')">
+                            <i class="bi bi-file-earmark me-2"></i>
+                            ${project.name || project.title}
+                        </div>
+                    `).join('')}
+                </div>
+            `).join('');
+        })
+        .catch(error => {
+            console.error('加载项目列表失败:', error);
+            projectTree.innerHTML = `<div class="alert alert-danger m-3">加载项目列表失败: ${error.message}</div>`;
+        });
+}
+
+function toggleDataType(dataType) {
+    const children = document.getElementById(`tree-${dataType}`);
+    if (children.style.display === 'none') {
+        children.style.display = 'block';
+    } else {
+        children.style.display = 'none';
+    }
+}
+
+function selectProject(projectId) {
+    const fileList = document.getElementById('file-list');
+    fileList.innerHTML = '<div class="text-center py-4"><div class="spinner-border" role="status"></div> 加载中...</div>';
+    
+    // 从API获取项目详情和文件列表
+    fetch(`/api/project/${projectId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(project => {
+            // 渲染项目信息和文件列表
+            fileList.innerHTML = `
+                <h5>${project.name || project.title || '项目详情'}</h5>
+                <div class="mb-3">
+                    <span class="badge data-type-badge type-${project.data_type || project.dataType}">${getDataTypeLabel(project.data_type || project.dataType)}</span>
+                    <span class="badge bg-secondary">${project.id}</span>
+                </div>
+                
+                <h6>项目信息</h6>
+                <table class="table table-sm mb-3">
+                    ${project.doi ? `<tr><td>DOI:</td><td>${project.doi}</td></tr>` : ''}
+                    ${project.db_id ? `<tr><td>数据库编号:</td><td>${project.db_id}</td></tr>` : ''}
+                    ${project.organism ? `<tr><td>物种:</td><td>${getOrganismLabel(project.organism)}</td></tr>` : ''}
+                    ${project.created_date ? `<tr><td>创建日期:</td><td>${project.created_date}</td></tr>` : ''}
+                    ${project.description ? `<tr><td colspan="2">${project.description}</td></tr>` : ''}
+                </table>
+                
+                <h6>文件列表</h6>
+                ${project.files && project.files.length > 0 ? `
+                    <div class="list-group">
+                        ${project.files.map(file => `
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-file-earmark me-2"></i>
+                                    <div>
+                                        <div class="fw-medium">${file.name}</div>
+                                        <small class="text-muted">${file.path || ''}</small>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span class="badge bg-secondary me-2">${file.size || 'N/A'}</span>
+                                    <span class="badge bg-info">${file.type || 'file'}</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : '<p class="text-muted">暂无文件</p>'}
+            `;
+        })
+        .catch(error => {
+            console.error('加载项目文件失败:', error);
+            fileList.innerHTML = `<div class="alert alert-danger">加载项目文件失败: ${error.message}</div>`;
+        });
+}
+
+// 目录树功能
+
+function loadDirectoryTree() {
+    const content = document.getElementById('directory-tree-content');
+    content.innerHTML = '<div class="text-center py-4"><div class="spinner-border" role="status"></div> 加载中...</div>';
+
+    // 从API获取项目列表
+    fetch('/api/projects')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(projectList => {
+            // 生成目录树
+            let tree = '# 生物信息学数据目录结构\n\n';
+            tree += '\n';
+            tree += '/bioraw/data/\n';
+
+            // 按数据类型分组
+            const groupedProjects = {};
+            projectList.forEach(project => {
+                const dataType = project.data_type || project.dataType;
+                if (!groupedProjects[dataType]) {
+                    groupedProjects[dataType] = [];
+                }
+                groupedProjects[dataType].push(project);
+            });
+
+            Object.keys(groupedProjects).sort().forEach(dataType => {
+                tree += `├── ${getDataTypeLabel(dataType)}/\n`;
+                const typeProjects = groupedProjects[dataType];
+
+                typeProjects.forEach((project, index) => {
+                    const isLast = index === typeProjects.length - 1;
+                    const prefix = isLast ? '└──' : '├──';
+                    tree += `${prefix} ${project.id}_${sanitizeFileName(project.name || project.title)}/\n`;
+
+                    // 添加文件
+                    if (project.files && project.files.length > 0) {
+                        const filePrefix = isLast ? '    ' : '│   ';
+                        project.files.forEach((file, fileIndex) => {
+                            const isFileLast = fileIndex === project.files.length - 1;
+                            const filePrefix2 = isFileLast ? '└──' : '├──';
+                            tree += `${filePrefix}${filePrefix2} ${file.name}\n`;
+                        });
+                    }
+                });
+            });
+
+            tree += '\n\n';
+
+            // 添加项目统计
+            tree += '## 项目统计\n\n';
+            tree += `总项目数: ${projectList.length}\n\n`;
+
+            tree += '### 按数据类型分类\n\n';
+            Object.keys(groupedProjects).forEach(dataType => {
+                tree += `- **${getDataTypeLabel(dataType)}**: ${groupedProjects[dataType].length} 个项目\n`;
+            });
+
+            tree += '\n### 按物种分类\n\n';
+            const organismCounts = {};
+            projectList.forEach(project => {
+                const organism = project.organism;
+                if (organism) {
+                    organismCounts[organism] = (organismCounts[organism] || 0) + 1;
+                }
+            });
+            Object.keys(organismCounts).forEach(organism => {
+                tree += `- **${getOrganismLabel(organism)}**: ${organismCounts[organism]} 个项目\n`;
+            });
+
+            tree += '\n---\n';
+            tree += `*生成时间: ${new Date().toLocaleString()}*\n`;
+
+            content.innerHTML = `<pre class="directory-tree">${tree}</pre>`;
+        })
+        .catch(error => {
+            console.error('加载目录树失败:', error);
+            content.innerHTML = `<div class="alert alert-danger">加载目录树失败: ${error.message}</div>`;
+        });

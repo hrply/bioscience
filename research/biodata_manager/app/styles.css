@@ -1,0 +1,640 @@
+/* 自定义样式 */
+:root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --success-gradient: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+    --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --info-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+/* 隐藏数字输入框的箭头 */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* 导航栏样式 */
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.25rem;
+}
+
+.navbar-nav .nav-link {
+    transition: all 0.3s ease;
+    border-radius: 0.25rem;
+    margin: 0 0.25rem;
+}
+
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 卡片样式 */
+.card {
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid #dee2e6;
+    font-weight: 600;
+}
+
+/* 统计卡片渐变背景 */
+.card.bg-primary {
+    background: var(--primary-gradient) !important;
+}
+
+.card.bg-success {
+    background: var(--success-gradient) !important;
+}
+
+.card.bg-warning {
+    background: var(--warning-gradient) !important;
+}
+
+.card.bg-info {
+    background: var(--info-gradient) !important;
+}
+
+/* 按钮样式 */
+.btn {
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+/* 表格样式 */
+.table {
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.table thead th {
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* 模态框样式 */
+.modal-content {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+}
+
+.modal-header {
+    border-bottom: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+    border-radius: 1rem 1rem 0 0;
+}
+
+/* 表单样式 */
+.form-control, .form-select {
+    border-radius: 0.5rem;
+    border: 1px solid #ced4da;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* 分页样式 */
+.pagination .page-link {
+    border-radius: 0.5rem;
+    margin: 0 0.125rem;
+    border: 1px solid #dee2e6;
+    color: #6c757d;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+/* 项目树样式 */
+#project-tree {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+}
+
+.tree-item {
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s ease;
+}
+
+.tree-item:hover {
+    background-color: #f0f0f0;
+}
+
+.tree-item.selected {
+    background-color: #e3f2fd;
+    border-left: 3px solid #2196f3;
+}
+
+.tree-children {
+    margin-left: 1.5rem;
+    border-left: 1px dashed #ccc;
+    padding-left: 0.5rem;
+}
+
+/* 文件列表样式 */
+.file-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s ease;
+}
+
+.file-item:hover {
+    background-color: #f8f9fa;
+}
+
+.file-icon {
+    width: 1.5rem;
+    text-align: center;
+    margin-right: 0.75rem;
+    color: #6c757d;
+}
+
+.file-info {
+    flex-grow: 1;
+}
+
+.file-name {
+    font-weight: 500;
+    color: #212529;
+}
+
+.file-size {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.file-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* 导入文件列表样式 */
+#import-file-list {
+    border: 1px solid #dee2e6;
+    background-color: #fff;
+    overflow-x: auto;
+    overflow-y: auto;
+    position: relative;
+    z-index: 1;
+}
+
+/* 多选下拉框 - 使用fixed定位在最高层 */
+.multi-select-dropdown {
+    display: none;
+    position: fixed;
+    z-index: 99999;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    padding: 8px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.multi-select-option {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.multi-select-option:hover {
+    background-color: #f8f9fa;
+}
+
+.multi-select-option .form-check-input {
+    margin-right: 8px;
+}
+
+.multi-select-quick-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #dee2e6;
+}
+
+/* 元数据表单样式 */
+.metadata-form-container .form-label {
+    font-weight: 500;
+    color: #212529;
+}
+
+.metadata-form-container .form-control:focus,
+.metadata-form-container .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.metadata-form-container .multi-select-container .btn {
+    text-align: left;
+}
+
+.metadata-form-container .multi-select-container .btn .placeholder {
+    color: #6c757d;
+}
+
+/* 下载扫描结果样式 */
+.scan-result-item {
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background-color: #fff;
+}
+
+.scan-result-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.scan-result-title {
+    font-weight: 600;
+    color: #212529;
+}
+
+.scan-result-path {
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.scan-result-info {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.detected-info {
+    background-color: #e3f2fd;
+    border: 1px solid #bbdefb;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.detected-info-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.25rem;
+}
+
+.detected-info-label {
+    font-weight: 500;
+}
+
+.detected-info-value {
+    color: #1976d2;
+}
+
+/* 状态标签样式 */
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-processing {
+    background-color: #cfe2ff;
+    color: #084298;
+}
+
+.status-completed {
+    background-color: #d1e7dd;
+    color: #0f5132;
+}
+
+.status-error {
+    background-color: #f8d7da;
+    color: #842029;
+}
+
+/* 数据类型标签样式 */
+.data-type-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* 使用data属性选择器来应用样式 */
+/* 转录组相关 */
+.data-type-badge[data-type*="transcriptomics"],
+.data-type-badge[data-type*="转录组"] {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.data-type-badge[data-type*="scrna-seq"],
+.data-type-badge[data-type*="单细胞转录组"] {
+    background-color: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.data-type-badge[data-type*="spatial"],
+.data-type-badge[data-type*="空间转录组"] {
+    background-color: #e1bee7;
+    color: #6a1b9a;
+}
+
+/* 蛋白组相关 */
+.data-type-badge[data-type*="proteomics"],
+.data-type-badge[data-type*="蛋白组"] {
+    background-color: #e8f5e8;
+    color: #2e7d32;
+}
+
+.data-type-badge[data-type*="phosphoproteomics"],
+.data-type-badge[data-type*="磷酸化组"] {
+    background-color: #fff3e0;
+    color: #f57c00;
+}
+
+/* 其他类型 */
+.data-type-badge[data-type*="cytof"],
+.data-type-badge[data-type*="质谱流式"] {
+    background-color: #fce4ec;
+    color: #c2185b;
+}
+
+.data-type-badge[data-type*="multiomics"],
+.data-type-badge[data-type*="多组学"] {
+    background-color: #f1f8e9;
+    color: #689f38;
+}
+
+.data-type-badge[data-type*="other"],
+.data-type-badge[data-type*="其他"] {
+    background-color: #f5f5f5;
+    color: #616161;
+}
+
+/* 默认样式(当没有匹配的类型时) */
+.data-type-badge:not([data-type]) {
+    background-color: #e0e0e0;
+    color: #424242;
+}
+
+/* 进度条样式 */
+.progress {
+    height: 0.5rem;
+    border-radius: 0.25rem;
+}
+
+/* 加载动画 */
+.loading-spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .btn {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+    }
+}
+
+/* 目录树样式 */
+.directory-tree {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    white-space: pre;
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #dee2e6;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.tree-node {
+    cursor: pointer;
+    user-select: none;
+}
+
+.tree-node:hover {
+    background-color: #e3f2fd;
+}
+
+.tree-branch {
+    color: #6c757d;
+}
+
+.tree-file {
+    color: #212529;
+}
+
+.tree-folder {
+    color: #1976d2;
+    font-weight: 500;
+}
+
+/* 搜索高亮 */
+.search-highlight {
+    background-color: #ffeb3b;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.125rem;
+}
+
+/* 工具提示样式 */
+.tooltip {
+    font-size: 0.875rem;
+}
+
+.tooltip-inner {
+    background-color: #212529;
+    border-radius: 0.25rem;
+}
+
+/* 拖拽区域样式 */
+.drag-drop-area {
+    border: 2px dashed #ccc;
+    border-radius: 0.5rem;
+    padding: 2rem;
+    text-align: center;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.drag-drop-area.drag-over {
+    border-color: #007bff;
+    background-color: #e3f2fd;
+}
+
+.drag-drop-area:hover {
+    border-color: #007bff;
+}
+
+/* 标签输入样式 */
+.tag-input-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.5rem;
+    min-height: 2.5rem;
+}
+
+.tag {
+    background-color: #e9ecef;
+    border-radius: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.tag-remove {
+    cursor: pointer;
+    color: #6c757d;
+}
+
+.tag-remove:hover {
+    color: #212529;
+}
+
+/* 成功/错误消息样式 */
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 500;
+}
+
+.alert-success {
+    background-color: #d1e7dd;
+    color: #0f5132;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #842029;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.alert-info {
+    background-color: #cfe2ff;
+    color: #084298;
+}
+
+/* 添加数据到现有项目功能样式 */
+.project-item {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.project-item:hover {
+    background-color: #f8f9fa;
+}
+
+.project-item.selected {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196f3;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.hover-bg-light:hover {
+    background-color: #f8f9fa;
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

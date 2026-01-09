@@ -1,0 +1,7 @@
+# 异步扫描优化
+aiofiles==23.2.0
+asyncio==3.4.3
+pathlib2==2.3.7
+# 高性能文件系统库
+watchdog==3.0.0
+scandir==1.10.0  # Python 3.5+已内置，但显式声明用于兼容性

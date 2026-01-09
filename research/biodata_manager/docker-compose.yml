@@ -1,0 +1,40 @@
+services:
+  biodata-manager:
+    build:
+      context: .
+      args:
+        - HTTP_PROXY=${HTTP_PROXY:-}
+        - HTTPS_PROXY=${HTTPS_PROXY:-}
+        - NO_PROXY=${NO_PROXY:-localhost,127.0.0.1}
+    container_name: biodata-manager
+    ports:
+      - "20425:8000"
+    volumes:
+      - /ssd/bioraw/raw_data:/bioraw/data:rw #原始数据存储
+      - /ssd/bioraw/downloads:/bioraw/downloads:rw #下载数据临时目录
+      - /ssd/bioraw/results:/bioraw/results:rw #分析结果
+      - /ssd/bioraw/analysis:/bioraw/analysis:rw #处理存储
+      - /ssd/bioraw/biodata.db:/bioraw/biodata.db:rw #元数据
+      - ./app:/app:rw # 应用代码热更新挂载
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - BIODATA_BASE_DIR=/bioraw/data
+      - BIODATA_DOWNLOAD_DIR=/bioraw/downloads
+      - BIODATA_RESULTS_DIR=/bioraw/results
+      - BIODATA_ANALYSIS_DIR=/bioraw/analysis
+      - BIODATA_DB_PATH=/bioraw/biodata.db
+      - BIODATA_USE_MOVE_MODE=true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - baota_net
+
+networks:
+  baota_net:
+    external: true
