@@ -1,0 +1,21 @@
+权限修复报告 - 2026年 01月 08日 星期四 21:23:58 CST
+========================================
+
+配置文件权限:
+总计 16K
+-rw-r--r-- 1 hrply hrply 1.1K  1月  4 01:52 config.example.yaml
+-rw-r--r-- 1 hrply hrply 1.1K  1月  6 17:38 config.yaml
+-rw-r--r-- 1 hrply hrply 1.1K  1月  8 15:50 mongod.conf
+-rw-r--r-- 1 hrply hrply 1.2K  1月  8 15:49 redis.conf
+
+脚本文件权限:
+总计 8.0K
+drwxr-xr-x 1 root  root     0  1月  8 21:22 docker-entrypoint-wrapper.sh
+-rwxr-xr-x 1 hrply hrply 3.9K  1月  8 21:21 fix-host-permissions.sh
+-rwxr-xr-x 1 hrply hrply 1.5K  1月  8 15:50 mongo-init.js
+
+Docker文件权限:
+-rw-r--r-- 1 hrply hrply 3.9K  1月  8 16:11 /home/hrply/software/bioscience/research/project_manager/Dockerfile
+-rw-r--r-- 1 hrply hrply 6.2K  1月  8 21:22 /home/hrply/software/bioscience/research/project_manager/docker-compose.yml
+-rw-r--r-- 1 hrply hrply 4.1K  1月  8 15:50 /home/hrply/software/bioscience/research/project_manager/docker-compose.prod.yml
+-rw-r--r-- 1 hrply hrply 2.4K  1月  8 16:39 /home/hrply/software/bioscience/research/project_manager/.dockerignore

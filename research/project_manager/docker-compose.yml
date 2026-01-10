@@ -1,0 +1,179 @@
+# AI科研助手 Docker Compose 配置 - 优化版
+# 支持本地目录挂载，便于数据持久化和备份
+
+services:
+  ai_researcher:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai_researcher_main
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "${APP_PORT:-20339}:8000"
+    volumes:
+      # ==================== 整合数据卷（三大主要卷）===================
+      # 主数据卷：实验数据、结果、配置、模板
+      - ai_researcher_data:/app/data
+      # 向量数据库卷
+      - ai_researcher_chroma:/app/chroma
+      # 上传文件卷
+      - ai_researcher_uploads:/app/uploads
+
+      # ==================== 日志（必须本地挂载）==================
+      - ./logs:/app/logs
+
+      # ==================== 备份卷（高权限，无视权限）==================
+      # 本地目录挂载，使用--privileged参数无视权限问题
+      - ./backup:/backup
+
+      # ==================== 示例数据（可选）==================
+      - ./examples:/app/examples:ro
+
+      # ==================== 代码挂载策略（根据环境选择）==================
+      # 开发环境：挂载代码（热更新）
+      - ./ai_researcher:/app/ai_researcher
+      # 生产环境：注释掉上行，使用下行
+      # - ./empty:/app/ai_researcher:ro
+
+      # ==================== 环境变量==================
+      - ./.env:/app/.env:ro
+
+    environment:
+      # ==================== 主配置 ====================
+      - TOKEN=${TOKEN:-your_secure_password_here}
+      - DATABASE_PATH=/app/data/experiments/experiments.db
+      - AI_RESEARCHER_CONFIG=/app/data/config/config.yaml
+      # ==================== Python路径 ====================
+      - PYTHONPATH=/app:/app/ai_researcher
+
+      # ==================== 代理配置 ====================
+      # HTTP代理设置，用于访问被限制的API（如Gemini等）
+      # 格式：http://127.0.0.1:7890 或 http://user:pass@proxy.example.com:8080
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - HTTPS_PROXY=${HTTP_PROXY:-}
+      - NO_PROXY=${NO_PROXY:-localhost,127.0.0.1}
+
+      # ==================== RAGFlow知识库配置 ====================
+      # RAGFlow Docker端口映射配置（需要与RAGFlow服务保持一致）
+      # 这些环境变量会自动传递给RAGFlowClient使用
+      # ⚠️ 重要：这些端口需要与RAGFlow docker-compose.yml或.env中的配置完全一致！可以直接将ragflow的.env复制过来
+
+      - SVR_WEB_HTTP_PORT=${SVR_WEB_HTTP_PORT:-20334}
+      - SVR_WEB_HTTPS_PORT=${SVR_WEB_HTTPS_PORT:-443}
+      - SVR_HTTP_PORT=${SVR_HTTP_PORT:-20335}
+      - ADMIN_SVR_HTTP_PORT=${ADMIN_SVR_HTTP_PORT:-20336}
+      - SVR_MCP_PORT=${SVR_MCP_PORT:-20337}
+
+      # ==================== Streamlit配置 ====================
+      - STREAMLIT_SERVER_PORT=8000
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+
+      # ==================== 其他配置 ====================
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - TZ=${TZ:-Asia/Shanghai}
+
+    networks:
+      - ai_researcher_net
+    stdin_open: true
+    tty: true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ==================== Redis缓存服务 ====================
+  redis:
+    image: redis:7-alpine
+    container_name: ai_researcher_redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      # 方式1：Docker 管理的数据卷（简单但不易备份）
+      - redis_data:/data
+
+      # 方式2：本地目录挂载（推荐，便于备份）
+      # - ./data/redis:/data
+
+      # Redis配置文件
+      - ./config/redis.conf:/etc/redis/redis.conf:ro
+    networks:
+      - ai_researcher_net
+    command: redis-server /etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==================== MongoDB数据库服务 ====================
+  mongodb:
+    image: mongo:6.0
+    container_name: ai_researcher_mongodb
+    restart: unless-stopped
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      # 方式1：Docker 管理的数据卷（简单但不易备份）
+      - mongodb_data:/data/db
+
+      # 方式2：本地目录挂载（推荐，便于备份）
+      # - ./data/mongodb:/data/db
+
+      # MongoDB配置文件
+      - ./config/mongod.conf:/etc/mongod.conf:ro
+
+      # 初始化脚本
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - ai_researcher_net
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-your_secure_password}
+      - MONGO_INITDB_DATABASE=ai_researcher
+    command: mongod --config /etc/mongod.conf
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# ==================== 数据卷定义 ====================
+# Docker 管理的数据卷
+volumes:
+  ai_researcher_data:
+    driver: local
+  ai_researcher_chroma:
+    driver: local
+  ai_researcher_uploads:
+    driver: local
+  redis_data:
+    driver: local
+  mongodb_data:
+    driver: local
+
+# 方案2：本地目录绑定（推荐，但需要手动创建目录）
+# volumes:
+#   redis_data:
+#     driver: local
+#     driver_opts:
+#       type: none
+#       o: bind
+#       device: ./data/redis
+#   mongodb_data:
+#     driver: local
+#     driver_opts:
+#       type: none
+#       o: bind
+#       device: ./data/mongodb
+
+# ==================== 网络定义 ====================
+networks:
+  ai_researcher_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

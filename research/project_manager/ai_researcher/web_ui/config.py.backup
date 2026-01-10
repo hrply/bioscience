@@ -1,0 +1,1180 @@
+"""
+配置管理页面 - 优化版
+支持API格式分类和自定义提供商
+移除了后端逻辑，提升前端性能
+"""
+
+import streamlit as st
+import json
+import sys
+from typing import Dict, List, Any
+
+
+def run():
+    # 页面配置
+    st.set_page_config(
+        page_title="配置管理",
+        page_icon="🎛️",
+        layout="wide"
+    )
+
+    # 极早期执行的JavaScript
+    st.markdown("""
+    <script>
+    // 页面加载前立即执行
+    (function() {
+        // 保存原始方法
+        const originalAddEventListener = EventTarget.prototype.addEventListener;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+
+        // 重写addEventListener，自动添加passive
+        EventTarget.prototype.addEventListener = function(type, listener, options) {
+            if (['wheel', 'touchmove', 'scroll', 'touchstart', 'touchend'].includes(type)) {
+                if (!options) options = {};
+                if (typeof options !== 'object') options = {};
+                options.passive = true;
+            }
+            return originalAddEventListener.call(this, type, listener, options);
+        };
+
+        // 抑制所有相关警告
+        function shouldSuppress(msg) {
+            return msg &&
+                   typeof msg === 'string' &&
+                   (msg.includes('non-passive') ||
+                    msg.includes('Violation') ||
+                    msg.includes('wheel') ||
+                    msg.includes('scroll-blocking') ||
+                    msg.includes('Added non-passive'));
+        }
+
+        console.warn = function(...args) {
+            if (shouldSuppress(args[0])) return;
+            try { originalWarn.apply(console, args); } catch(e) {}
+        };
+
+        console.error = function(...args) {
+            if (shouldSuppress(args[0])) return;
+            try { originalError.apply(console, args); } catch(e) {}
+        };
+
+        // 页面加载完成后清理
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                // 清除控制台中已有的警告
+                if (console.clear) {
+                    // 只清除特定警告
+                    const logs = [];
+                    const origLog = console.log;
+                    console.log = function(...args) {
+                        if (!shouldSuppress(args[0])) origLog.apply(console, args);
+                    };
+                }
+            }, 500);
+        });
+
+    })();
+    </script>
+    """, unsafe_allow_html=True)
+
+    st.title("🎛️ 配置管理")
+
+    # 说明警告信息
+    with st.expander("ℹ️ 关于开发者工具警告", expanded=False):
+        st.markdown("""
+        **如果您在浏览器开发者工具中看到警告，请忽略：**
+
+        1. **Non-passive event listener 警告**
+           - 这些警告来自浏览器性能检测
+           - 不影响应用程序功能
+           - 我们已自动优化事件监听器
+
+        2. **如何隐藏这些警告**
+           - 按 F12 打开开发者工具
+           - 点击 "Console" 选项卡
+           - 在过滤框中输入：`-Violation`
+           - 或勾选 "Hide all" 复选框
+
+        3. **不影响功能**
+           - 所有功能正常工作
+           - 页面响应性良好
+           - 这是框架级别的警告
+        """)
+
+    # 页面加载后的样式
+    st.markdown("""
+    <style>
+    /* 优化滚动性能 */
+    .main {
+        scroll-behavior: smooth;
+    }
+
+    /* API密钥输入框样式 */
+    [data-testid="text-input"] input[type="password"] {
+        font-family: monospace;
+        letter-spacing: 0.5px;
+        -webkit-text-security: disc;
+    }
+
+    /* 阻止浏览器自动填充和保存密码提示 */
+    [data-testid="text-input"] input[type="password"] {
+        autofill: none !important;
+        background-attachment: fixed;
+    }
+
+    /* 隐藏密码字段的浏览器提示 */
+    [data-testid="text-input"] input:-webkit-autofill,
+    [data-testid="text-input"] input:-webkit-autofill:hover,
+    [data-testid="text-input"] input:-webkit-autofill:focus {
+        -webkit-box-shadow: 0 0 0 1000px white inset !important;
+    }
+
+    /* 蓝色URL框样式增强 */
+    .url-preview-box {
+        background-color: #E3F2FD;
+        border: 1px solid #90CAF9;
+        border-radius: 0.25rem;
+        padding: 0.5rem 0.75rem;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        font-family: monospace;
+        font-size: 0.875rem;
+        color: #0D47A1;
+        word-break: break-all;
+    }
+
+    /* 完整URL输入框蓝色样式 */
+    [data-testid="text-input"] input:disabled {
+        background-color: #E3F2FD !important;
+        border-color: #90CAF9 !important;
+        color: #0D47A1 !important;
+        font-family: monospace !important;
+    }
+
+    /* RAGFlow密码字段样式 */
+    div[data-baseweb="input"] input[type="password"] {
+        font-family: monospace;
+        letter-spacing: 0.5px;
+    }
+
+    /* 隐藏特定警告元素 */
+    [data-testid="stNotification"],
+    .stException {
+        display: none !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # 标签页
+    tab1, tab2, tab3 = st.tabs(["API密钥管理", "模型配置", "系统配置"])
+
+    with tab1:
+        st.subheader("🔑 API密钥和端点管理")
+
+        try:
+            from ai_researcher.secrets_manager import get_secrets_manager
+
+            # 内置常用提供商
+            COMMON_PROVIDERS = {
+                "openai": {
+                    "name": "OpenAI 兼容格式",
+                    "default_url": "https://api.openai.com/v1",
+                    "description": "OpenAI、DeepSeek、智谱清言、月之暗面、零一万物等"
+                },
+                "anthropic": {
+                    "name": "Anthropic 兼容格式",
+                    "default_url": "https://api.anthropic.com",
+                    "description": "Anthropic Claude等"
+                },
+                "gemini": {
+                    "name": "Gemini 原生格式",
+                    "default_url": "https://generativelanguage.googleapis.com/v1",
+                    "description": "Google Gemini等"
+                },
+                "dashscope": {
+                    "name": "阿里巴巴 DASHSCOPE",
+                    "default_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+                    "description": "通义千问、阿里巴巴云等"
+                },
+                "zai": {
+                    "name": "BIGMODEL ZAI",
+                    "default_url": "https://open.bigmodel.cn/api/paas/v4",
+                    "description": "智谱GLM、BIGMODEL等"
+                },
+                "custom": {
+                    "name": "自定义",
+                    "default_url": "",
+                    "description": "自定义API格式"
+                }
+            }
+
+            # ==================== API密钥设置 ====================
+            st.markdown("#### API密钥设置")
+
+            # 初始化session_state
+            if 'temp_api_config' not in st.session_state:
+                st.session_state['temp_api_config'] = {
+                    'provider_name': '',
+                    'tag': '',
+                    'test_model_name': '',
+                    'api_key': '',
+                    'base_url': ''
+                }
+
+            # 第一行：3个输入框
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                provider_name = st.text_input(
+                    "供应商名称",
+                    placeholder="输入供应商名称（如：openai, anthropic, gemini 等）",
+                    key="provider_name",
+                    value=st.session_state['temp_api_config']['provider_name']
+                )
+
+
+            with col2:
+                api_key = st.text_input(
+                    "API-KEY",
+                    type="password",
+                    placeholder="输入您的API密钥...",
+                    key="api_key",
+                    value=st.session_state['temp_api_config']['api_key']
+                )
+
+            with col3:
+                # 如果session_state中有值，使用该值；否则根据供应商名称获取默认值
+                if st.session_state['temp_api_config']['base_url']:
+                    default_value = st.session_state['temp_api_config']['base_url']
+                elif provider_name and provider_name in COMMON_PROVIDERS:
+                    default_value = COMMON_PROVIDERS[provider_name]["default_url"]
+                else:
+                    default_value = ""
+
+                base_url = st.text_input(
+                    "EndPoint(端点)",
+                    value=default_value,
+                    placeholder="https://api.example.com",
+                    key="base_url"
+                )
+
+            # 第二行：标签输入框和完整URL展示框（2列布局）
+            col1, col2 = st.columns([1, 2])
+
+            with col1:
+                tag = st.text_input(
+                    "标签",
+                    placeholder="例如：生产环境, 测试环境, 开发环境...",
+                    key="tag",
+                    value=st.session_state['temp_api_config']['tag']
+                )
+
+            with col2:
+                # 生成三种格式的完整URL选项
+                url_options = []
+                url_values = {}
+
+                if base_url:
+                    # OpenAI格式
+                    if base_url.endswith('/'):
+                        openai_url = f"{base_url}chat/completions"
+                    else:
+                        openai_url = f"{base_url}/v1/chat/completions"
+                    url_options.append(f"OpenAI格式: {openai_url}")
+                    url_values[url_options[-1]] = openai_url
+
+                    # Gemini格式
+                    if base_url.endswith('/'):
+                        gemini_url = f"{base_url}models/gemini-pro:generateContent"
+                    else:
+                        gemini_url = f"{base_url}/models/gemini-pro:generateContent"
+                    url_options.append(f"Gemini格式: {gemini_url}")
+                    url_values[url_options[-1]] = gemini_url
+
+                    # Anthropic格式
+                    if base_url.endswith('/'):
+                        anthropic_url = f"{base_url}messages"
+                    else:
+                        anthropic_url = f"{base_url}/v1/messages"
+                    url_options.append(f"Anthropic格式: {anthropic_url}")
+                    url_values[url_options[-1]] = anthropic_url
+
+                # 完整URL下拉选择框（与标签输入框结构一致）
+                selected_url_label = st.selectbox(
+                    "完整URL",
+                    options=url_options if url_options else ["请先输入EndPoint地址"],
+                    key="full_url_select",
+                    disabled=not url_options
+                )
+
+                # 获取选中的完整URL
+                selected_full_url = url_values.get(selected_url_label, "") if url_options else ""
+
+            # 分隔线
+            st.markdown("<hr style='border: 2px solid #e0e0e0; margin: 25px 0;'>", unsafe_allow_html=True)
+
+            # 第二部分标题
+            st.markdown("##### 🔧 操作")
+
+            # 三个功能框：33%宽度并排
+            col1, col2, col3 = st.columns([1, 1, 1])
+
+            with col1:
+                test_model_name = st.text_input(
+                    "",
+                    placeholder="输入测试模型名称",
+                    key="test_model_name",
+                    value=st.session_state['temp_api_config']['test_model_name'],
+                    label_visibility="collapsed"
+                )
+
+            with col2:
+                if st.button("🧪 测试API连接", type="secondary", use_container_width=True):
+                    # 验证输入
+                    validation_passed = True
+                    test_error_messages = []
+
+                    if not provider_name:
+                        test_error_messages.append("❌ 供应商名称不能为空")
+                        validation_passed = False
+
+                    if not api_key:
+                        test_error_messages.append("❌ API密钥不能为空")
+                        validation_passed = False
+
+                    if not base_url:
+                        test_error_messages.append("❌ EndPoint地址不能为空")
+                        validation_passed = False
+
+                    if not selected_full_url:
+                        test_error_messages.append("❌ 请选择完整URL格式")
+                        validation_passed = False
+
+                    if not test_model_name:
+                        test_error_messages.append("❌ 测试模型名称不能为空")
+                        validation_passed = False
+
+                    if not validation_passed:
+                        for msg in test_error_messages:
+                            st.error(msg)
+                    else:
+                        # 进行连通性测试
+                        with st.spinner("正在测试API连通性..."):
+                            try:
+                                import requests
+                                import json
+
+                                # 根据URL格式确定API类型
+                                if "/chat/completions" in selected_full_url:
+                                    # OpenAI格式
+                                    payload = {
+                                        "model": test_model_name.strip(),
+                                        "messages": [{"role": "user", "content": "Hi"}],
+                                        "max_tokens": 5
+                                    }
+                                elif "/messages" in selected_full_url:
+                                    # Anthropic格式
+                                    payload = {
+                                        "model": test_model_name.strip(),
+                                        "max_tokens": 5,
+                                        "messages": [{"role": "user", "content": "Hi"}]
+                                    }
+                                elif "/generateContent" in selected_full_url:
+                                    # Gemini格式
+                                    payload = {
+                                        "contents": [{
+                                            "parts": [{"text": "Hi"}]
+                                        }],
+                                        "generationConfig": {
+                                            "maxOutputTokens": 5
+                                        }
+                                    }
+                                else:
+                                    # 默认使用OpenAI格式
+                                    payload = {
+                                        "model": test_model_name.strip(),
+                                        "messages": [{"role": "user", "content": "Hi"}],
+                                        "max_tokens": 5
+                                    }
+
+                                headers = {
+                                    "Content-Type": "application/json",
+                                    "Authorization": f"Bearer {api_key.strip()}"
+                                }
+
+                                # 发送HTTP请求
+                                response = requests.post(
+                                    selected_full_url.strip(),
+                                    headers=headers,
+                                    data=json.dumps(payload),
+                                    timeout=10
+                                )
+
+                                # 检查响应
+                                if response.status_code == 200:
+                                    st.success(f"✅ API连接测试成功！状态码: {response.status_code}")
+                                    try:
+                                        resp_json = response.json()
+                                        if "choices" in resp_json:
+                                            content = resp_json["choices"][0]["message"]["content"]
+                                        elif "content" in resp_json:
+                                            content = resp_json["content"][0]["text"]
+                                        elif "candidates" in resp_json:
+                                            content = resp_json["candidates"][0]["content"]["parts"][0]["text"]
+                                        else:
+                                            content = str(resp_json)[:100]
+                                        st.info(f"响应预览: {content[:100]}...")
+                                    except:
+                                        pass
+                                elif response.status_code == 401:
+                                    st.error(f"❌ 认证失败，请检查API密钥。状态码: {response.status_code}")
+                                elif response.status_code == 404:
+                                    st.error(f"❌ API端点不存在或模型名称错误。状态码: {response.status_code}")
+                                else:
+                                    st.warning(f"⚠️ API响应异常。状态码: {response.status_code}")
+                                    try:
+                                        error_data = response.json()
+                                        st.error(f"错误信息: {error_data}")
+                                    except:
+                                        st.error(f"响应内容: {response.text[:200]}")
+                            except requests.exceptions.Timeout:
+                                st.error("❌ 连接超时，请检查网络或端点地址")
+                            except requests.exceptions.ConnectionError:
+                                st.error("❌ 连接失败，请检查EndPoint地址是否正确")
+                            except Exception as e:
+                                st.error(f"❌ 测试连接失败: {str(e)}")
+
+            with col3:
+                save_btn = st.button("💾 保存API密钥", type="primary", use_container_width=True)
+
+            # 处理保存按钮
+            if save_btn:
+                if not provider_name:
+                    st.error("❌ 供应商名称不能为空")
+                elif not api_key:
+                    st.error("❌ API密钥不能为空")
+                elif not base_url:
+                    st.error("❌ API端点不能为空")
+                else:
+                    try:
+                        secrets_manager = get_secrets_manager()
+                        secret_id = secrets_manager.add_api_secret(
+                            provider=provider_name.strip(),
+                            api_key=api_key.strip(),
+                            base_url=base_url.strip(),
+                            tag=tag.strip() if tag else ""
+                        )
+                        st.success(
+                            f"✅ 已添加API密钥组合！\n"
+                            f"ID: {secret_id} | TAG: {tag if tag else '(无标签)'}"
+                        )
+                        # 清空临时数据
+                        st.session_state['temp_api_config'] = {
+                            'provider_name': '',
+                            'tag': '',
+                            'test_model_name': '',
+                            'api_key': '',
+                            'base_url': ''
+                        }
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ 保存失败: {e}")
+
+            # 保存临时数据到session_state
+            st.session_state['temp_api_config']['provider_name'] = provider_name
+            st.session_state['temp_api_config']['tag'] = tag
+            st.session_state['temp_api_config']['test_model_name'] = test_model_name
+            st.session_state['temp_api_config']['api_key'] = api_key
+            st.session_state['temp_api_config']['base_url'] = base_url
+            st.session_state['temp_api_config']['selected_full_url'] = selected_full_url
+
+            st.markdown("---")
+
+            # ==================== API密钥管理 ====================
+            st.markdown("#### API密钥管理")
+
+            secrets_manager = get_secrets_manager()
+
+            # 获取所有API密钥和端点组合
+            all_secrets = secrets_manager.get_api_secrets()
+
+            # 子模块1：当前配置列表
+            st.markdown("##### 当前配置")
+
+            if not all_secrets:
+                st.info("📭 暂无配置，请添加API密钥组合")
+            else:
+                # 创建表格展示
+                for secret in all_secrets:
+                    provider = secret['provider']
+                    tag = secret['tag'] if secret['tag'] else "(无标签)"
+                    # 加密显示API-KEY，前4位 + **** + 后4位
+                    key_preview = f"{secret['api_key'][:4]}****{secret['api_key'][-4:]}" if len(secret['api_key']) >= 8 else "****"
+                    endpoint = secret['base_url'] if secret['base_url'] else "(无端点)"
+
+                    st.markdown(
+                        f"**{provider}** | **{tag}** | **{key_preview}** | **{endpoint}**"
+                    )
+
+            st.markdown("---")
+
+            # 子模块2：删除API密钥
+            st.markdown("##### 删除API密钥")
+
+            if not all_secrets:
+                st.info("暂无配置可删除")
+            else:
+                # 创建删除选项 - 只显示标签和供应商
+                secret_options = {}
+                for secret in all_secrets:
+                    tag_display = secret['tag'] if secret['tag'] else "(无标签)"
+                    option_text = f"[{secret['provider']}] {tag_display}"
+                    secret_options[option_text] = secret['id']
+
+                col1, col2 = st.columns([2, 1])
+
+                with col1:
+                    selected_option = st.selectbox(
+                        "",
+                        options=list(secret_options.keys()),
+                        label_visibility="collapsed",
+                        placeholder="选择要删除的API密钥"
+                    )
+
+                with col2:
+                    if st.button("🗑️ 删除", type="secondary", use_container_width=True):
+                        selected_id = secret_options[selected_option]
+                        st.session_state['secret_to_delete'] = {
+                            'id': selected_id,
+                            'option': selected_option
+                        }
+
+                # 确认删除对话框
+                if 'secret_to_delete' in st.session_state:
+                    secret_info = st.session_state['secret_to_delete']
+                    st.warning(
+                        f"⚠️ 确认要删除API密钥吗？\n\n{secret_info['option']}\n\n"
+                        f"此操作不可撤销！"
+                    )
+
+                    col3, col4 = st.columns(2)
+                    with col3:
+                        if st.button("✅ 确认删除", type="primary"):
+                            try:
+                                success = secrets_manager.delete_api_secret_by_id(
+                                    secret_info['id']
+                                )
+                                if success:
+                                    st.success("✅ API密钥已删除！")
+                                    del st.session_state['secret_to_delete']
+                                    st.rerun()
+                                else:
+                                    st.error("❌ 删除失败，API密钥可能已被删除")
+                                    del st.session_state['secret_to_delete']
+                            except Exception as e:
+                                st.error(f"❌ 删除失败: {e}")
+                                del st.session_state['secret_to_delete']
+
+                    with col4:
+                        if st.button("❌ 取消"):
+                            del st.session_state['secret_to_delete']
+                            st.rerun()
+
+        except Exception as e:
+            st.error(f"加载API密钥状态失败: {e}")
+
+    with tab2:
+        st.subheader("🤖 模型配置")
+
+        try:
+            from ai_researcher.models.config_manager import ModelConfigManager
+            from ai_researcher.secrets_manager import get_secrets_manager
+
+            manager = ModelConfigManager()
+            secrets_manager = get_secrets_manager()
+
+            # 获取所有提供商和端点
+            providers = secrets_manager.get_all_providers()
+            base_urls = secrets_manager.get_all_base_urls()
+
+            # ==================== 添加模型配置 ====================
+            st.markdown("➕ 添加模型配置")
+
+            # 表单外的测试按钮
+            test_model_btn = st.button(
+                "🧪 测试模型连接",
+                type="secondary",
+                use_container_width=True
+            )
+
+            with st.form("add_model_config"):
+                # 基本配置
+                st.markdown("**基本配置**")
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    config_name = st.text_input("配置名称", placeholder="例如：My-GPT4", key="test_config_name")
+                    provider = st.selectbox(
+                        "提供商",
+                        options=sorted(providers) if providers else ["无可用提供商"],
+                        key="test_provider"
+                    )
+
+                with col2:
+                    model_name = st.text_input("模型名称", placeholder="例如：gpt-4, claude-3, gemini-pro", key="model_name_config")
+                    api_type = st.selectbox(
+                        "API类型",
+                        options=[
+                            "chat",
+                            "messages",
+                            "generateContent",
+                            "response",
+                            "reasoning",
+                            "new_api"
+                        ],
+                        index=0,
+                        format_func=lambda x: {
+                            "chat": "Chat Completions (OpenAI兼容)",
+                            "messages": "Messages (Anthropic兼容)",
+                            "generateContent": "GenerateContent (Gemini原生)",
+                            "response": "Response (通用)",
+                            "reasoning": "Reasoning (推理模型)",
+                            "new_api": "NEW-API (API代理，兼容三种格式)"
+                        }.get(x, x),
+                        key="test_api_type"
+                    )
+
+                # 端点配置
+                if api_type == "new_api":
+                    st.info("💡 NEW-API 说明", icon="ℹ️")
+                    st.write("NEW-API 是一个API代理，通过基础URL兼容三种格式：")
+                    st.write("• 含gpt/openai → 补全 → https://xxx.com/v1/chat/completions")
+                    st.write("• 含claude/anthropic → 补全 → https://xxx.com/v1/messages")
+                    st.write("• 含gemini/google → 补全 → https://xxx.com/v1/generateContent")
+                    st.write("只需输入基础URL，如：https://api.example.com")
+
+                if providers and base_urls:
+                    selected_endpoint = st.selectbox(
+                        "选择已配置的端点",
+                        options=sorted(base_urls.keys()) if base_urls else ["无可用端点"],
+                        key="test_selected_endpoint"
+                    )
+
+                    if selected_endpoint and selected_endpoint != "无可用端点":
+                        base_url_value = base_urls[selected_endpoint]
+                        # 如果是NEW-API类型，显示完整的URL预览
+                        if api_type == "new_api":
+                            from ai_researcher.models.api_client import UnifiedAPIClient
+                            full_url = UnifiedAPIClient.get_full_url_preview(base_url_value, api_type, model_name)
+                            if model_name:
+                                st.success(f"💡 完整URL: {full_url}")
+                        else:
+                            st.info(f"端点URL: {base_url_value}")
+                else:
+                    selected_endpoint = st.text_input(
+                        "或直接输入端点URL",
+                        placeholder="https://api.example.com" if api_type == "new_api" else "https://...",
+                        key="test_selected_endpoint"
+                    )
+
+                # API密钥选择
+                # 获取所有API密钥和端点组合
+                all_secrets = secrets_manager.get_api_secrets()
+
+                # 根据选中的提供商过滤组合
+                available_secrets = [s for s in all_secrets if s['provider'] == provider] if provider != "无可用提供商" else []
+
+                if available_secrets:
+                    # 创建下拉选项：显示 TAG | API-KEY | 端点
+                    secret_options = {}
+                    for secret in available_secrets:
+                        tag = secret['tag'] if secret['tag'] else "(无标签)"
+                        key_preview = f"{secret['api_key'][:8]}...{secret['api_key'][-4:]}"
+                        endpoint = secret['base_url'] if secret['base_url'] else "(无端点)"
+                        option_text = f"{tag} | {key_preview} | {endpoint}"
+                        secret_options[option_text] = secret['id']
+
+                    selected_secret = st.selectbox(
+                        "选择API密钥和端点组合",
+                        options=list(secret_options.keys()),
+                        key="test_api_secret_selector"
+                    )
+                    selected_secret_id = secret_options[selected_secret]
+                else:
+                    st.warning(f"⚠️ 未找到 '{provider}' 的API密钥组合，请先在API密钥管理中添加")
+                    selected_secret_id = None
+
+                # 代理设置
+                st.markdown("**网络设置**")
+                col_proxy1, col_proxy2 = st.columns([2, 1])
+
+                with col_proxy1:
+                    use_proxy = st.checkbox(
+                        "通过HTTP代理访问",
+                        value=False,
+                        key="test_use_proxy"
+                    )
+
+                if use_proxy:
+                    import os
+                    proxy_url = os.environ.get('HTTP_PROXY', '')
+                    if proxy_url:
+                        st.success(f"✅ 代理已配置: {proxy_url}")
+                    else:
+                        st.warning("⚠️ HTTP_PROXY环境变量未设置，请确保在docker-compose.yml中配置")
+
+                # 参数设置（在表单内部）
+                st.markdown("**参数设置**")
+                col1, col2 = st.columns(2)
+                with col1:
+                    temperature = st.slider("温度参数", min_value=0.0, max_value=1.0, value=0.7, step=0.1, key="test_temperature")
+                with col2:
+                    max_tokens = st.number_input("最大Token数", min_value=100, max_value=32000, value=4000, step=100, key="test_max_tokens")
+
+                # 激活选项
+                is_active = st.checkbox("立即激活此配置", value=True, key="test_is_active")
+
+                # 添加配置按钮（在表单内部）
+                submitted = st.form_submit_button("💾 添加配置", type="primary")
+
+            # 处理表单提交（在表单内部）
+            if submitted:
+                # 验证输入
+                validation_passed = True
+
+                if not config_name.strip():
+                    st.error("❌ 配置名称不能为空")
+                    validation_passed = False
+
+                if not model_name.strip():
+                    st.error("❌ 模型名称不能为空")
+                    validation_passed = False
+
+                # 检查是否选择了API密钥组合
+                if not selected_secret_id:
+                    st.error("❌ 请先选择API密钥和端点组合")
+                    validation_passed = False
+
+                if not validation_passed:
+                    st.stop()
+
+                try:
+                    # 使用选择的API密钥组合ID
+                    api_secret_id_value = selected_secret_id
+
+                    # 获取完整的API密钥组合信息
+                    secret_info = secrets_manager.get_api_secret_by_id(selected_secret_id)
+                    if not secret_info:
+                        st.error("❌ 无法获取API密钥组合信息")
+                        st.stop()
+
+                    # 如果是NEW-API类型，显示完整URL预览
+                    if api_type == "new_api":
+                        from ai_researcher.models.api_client import UnifiedAPIClient
+                        full_url = UnifiedAPIClient.get_full_url_preview(
+                            secret_info['base_url'], api_type, model_name
+                        )
+                        st.success(f"✅ NEW-API完整URL: {full_url}", icon="✅")
+
+                    success = manager.add_model_config(
+                        name=config_name,
+                        provider=provider,
+                        endpoint=secret_info['base_url'],
+                        api_type=api_type,
+                        api_key=secret_info['api_key'],
+                        api_secret_id=api_secret_id_value,
+                        model_name=model_name,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        use_proxy=use_proxy,
+                        is_active=is_active
+                    )
+
+                    if success:
+                        st.session_state['config_saved'] = True
+                        st.session_state['config_name'] = config_name
+                    else:
+                        st.error("❌ 添加配置失败，请检查配置是否已存在")
+                except Exception as e:
+                    st.error(f"❌ 添加配置失败: {e}")
+
+        # 模型连通性测试按钮（在表单外部，紧挨着网络设置）
+        col_test, col_space = st.columns([1, 3])
+        with col_test:
+            if st.button("🔍 模型连通性测试", type="secondary", use_container_width=True):
+                # 获取表单外的值
+                test_config_name = st.session_state.get('test_config_name', '')
+                test_provider = st.session_state.get('test_provider', '')
+                test_model_name = st.session_state.get('model_name_config', '')
+                test_selected_endpoint = st.session_state.get('test_selected_endpoint', '')
+                test_api_type = st.session_state.get('test_api_type', 'chat')
+                test_selected_secret = st.session_state.get('test_api_secret_selector', '')
+
+                # 验证输入
+                validation_passed = True
+                test_error_messages = []
+
+                if not test_config_name.strip():
+                    test_error_messages.append("❌ 配置名称不能为空")
+                    validation_passed = False
+
+                if not test_model_name.strip():
+                    test_error_messages.append("❌ 模型名称不能为空")
+                    validation_passed = False
+
+                if not test_provider or test_provider == "无可用提供商":
+                    test_error_messages.append("❌ 请选择提供商")
+                    validation_passed = False
+
+                if not test_selected_endpoint or test_selected_endpoint == "无可用端点":
+                    test_error_messages.append("❌ 请选择或输入端点URL")
+                    validation_passed = False
+
+                if not test_selected_secret:
+                    test_error_messages.append("❌ 请选择API密钥组合")
+                    validation_passed = False
+
+                if not validation_passed:
+                    for msg in test_error_messages:
+                        st.error(msg)
+                else:
+                    # 进行连接测试
+                    with st.spinner("正在测试模型连接..."):
+                        try:
+                            # 获取端点URL
+                            if test_selected_endpoint and test_selected_endpoint != "无可用端点" and test_selected_endpoint in base_urls:
+                                test_endpoint = base_urls[test_selected_endpoint]
+                            else:
+                                test_endpoint = test_selected_endpoint
+
+                            # 如果是NEW-API类型，生成完整URL预览
+                            if test_api_type == "new_api":
+                                from ai_researcher.models.api_client import UnifiedAPIClient
+                                full_url = UnifiedAPIClient.get_full_url_preview(test_endpoint, test_api_type, test_model_name)
+                                test_endpoint_for_api = full_url
+                            else:
+                                test_endpoint_for_api = test_endpoint
+
+                            # 获取API密钥
+                            all_secrets = secrets_manager.get_api_secrets()
+                            selected_secret_id = None
+                            for secret in all_secrets:
+                                tag = secret['tag'] if secret['tag'] else "(无标签)"
+                                key_preview = f"{secret['api_key'][:8]}...{secret['api_key'][-4:]}"
+                                endpoint = secret['base_url'] if secret['base_url'] else "(无端点)"
+                                option_text = f"{tag} | {key_preview} | {endpoint}"
+                                if option_text == test_selected_secret:
+                                    selected_secret_id = secret['id']
+                                    break
+
+                            if not selected_secret_id:
+                                st.error("❌ 无法获取API密钥ID")
+                                st.stop()
+
+                            secret_info = secrets_manager.get_api_secret_by_id(selected_secret_id)
+                            if not secret_info:
+                                st.error("❌ 无法获取API密钥信息")
+                                st.stop()
+
+                            # 调用测试连接
+                            test_result = secrets_manager.test_api_connection(
+                                provider=test_provider,
+                                api_key=secret_info['api_key'].strip(),
+                                base_url=test_endpoint_for_api,
+                                test_model=test_model_name.strip()
+                            )
+
+                            # 显示测试结果
+                            if test_result["success"]:
+                                st.success(test_result["message"])
+                                if "response_preview" in test_result:
+                                    st.info(f"响应预览: {test_result['response_preview'][:100]}...")
+                            else:
+                                st.error(test_result["message"])
+                                if "error" in test_result:
+                                    st.error(f"错误详情: {test_result['error']}")
+                        except Exception as e:
+                            st.error(f"❌ 测试连接失败: {str(e)}")
+
+        # 显示保存成功的提示
+        if st.session_state.get('config_saved', False):
+            st.success(f"✅ 配置 '{st.session_state.get('config_name', '')}' 添加成功！")
+            # 清除状态
+            del st.session_state['config_saved']
+            if 'config_name' in st.session_state:
+                del st.session_state['config_name']
+
+        st.markdown("---")
+
+        # ==================== 配置列表 ====================
+        st.markdown("📋 当前配置")
+
+        configs = manager.list_model_configs()
+
+        if not configs:
+            st.info("📭 暂无模型配置")
+        else:
+            for config in configs:
+                with st.container():
+                    col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+
+                    with col1:
+                        status = "✅ 激活" if config.get('is_active') else "○ 未激活"
+                        st.markdown(f"**{config['name']}** {status}")
+                        st.write(f"{config['provider']} - {config['model_name']}")
+
+                    with col2:
+                        if st.button("👁️ 查看", key=f"view_{config['name']}"):
+                            st.session_state[f'view_config_{config["name"]}'] = True
+
+                    with col3:
+                        if st.button("🧪 测试", key=f"test_{config['name']}"):
+                            st.session_state[f'test_config_{config["name"]}'] = True
+
+                    with col4:
+                        if st.button("🗑️ 删除", key=f"delete_{config['name']}"):
+                            st.session_state[f'delete_config_{config["name"]}'] = True
+
+                    # 查看详情
+                    if st.session_state.get(f'view_config_{config["name"]}', False):
+                        st.markdown("---")
+                        st.json(config)
+                        if st.button("✅ 关闭", key=f"close_view_{config['name']}"):
+                            st.session_state[f'view_config_{config["name"]}'] = False
+                            st.rerun()
+
+                    # 测试连接
+                    if st.session_state.get(f'test_config_{config["name"]}', False):
+                        st.markdown("---")
+                        with st.spinner("正在测试连接..."):
+                            try:
+                                result = manager.test_connection(config['name'])
+                                if result['success']:
+                                    st.success("✅ 连接测试成功")
+                                else:
+                                    st.error(f"❌ 连接测试失败: {result.get('error', '未知错误')}")
+                            except Exception as e:
+                                st.error(f"测试连接失败: {e}")
+
+                        if st.button("✅ 关闭", key=f'close_test_{config["name"]}'):
+                            st.session_state[f'test_config_{config["name"]}'] = False
+                            st.rerun()
+
+                    # 删除确认
+                    if st.session_state.get(f'delete_config_{config["name"]}', False):
+                        st.warning(f"⚠️ 确定要删除配置 '{config['name']}' 吗？")
+                        col_a, col_b = st.columns(2)
+
+                        with col_a:
+                            if st.button("✅ 确认删除", key=f"confirm_delete_{config['name']}"):
+                                try:
+                                    success = manager.delete_model_config(config['name'])
+                                    if success:
+                                        st.session_state['config_deleted'] = True
+                                        st.session_state['config_deleted_name'] = config['name']
+                                        st.session_state[f'delete_config_{config["name"]}'] = False
+                                        st.rerun()
+                                    else:
+                                        st.error("❌ 删除失败")
+                                except Exception as e:
+                                    st.error(f"❌ 删除配置失败: {e}")
+
+                        with col_b:
+                            if st.button("❌ 取消", key=f"cancel_delete_{config['name']}"):
+                                st.session_state[f'delete_config_{config["name"]}'] = False
+                                st.rerun()
+
+        # 显示删除成功的提示
+        if st.session_state.get('config_deleted', False):
+            config_name = st.session_state.get('config_deleted_name', '')
+            st.success(f"✅ 配置 '{config_name}' 已删除！")
+            del st.session_state['config_deleted']
+            del st.session_state['config_deleted_name']
+
+        st.markdown("---")
+
+    except Exception as e:
+        st.error(f"加载模型配置失败: {e}")
+
+    with tab3:
+        st.subheader("⚙️ 系统配置")
+
+        # RAGFlow配置
+        st.markdown("### 📚 RAGFlow知识库配置")
+
+        try:
+            from ai_researcher.config import load_config, save_config
+            from ai_researcher.core.ragflow import RAGFlowClient, RAGFlowError
+            config = load_config()
+
+            # 当前配置
+            current_config = config.get('ragflow', {})
+            current_endpoint = current_config.get('endpoint', 'http://192.168.3.147:20334')
+            current_api_key = current_config.get('api_key', '')
+            current_ports = current_config.get('ports', {})
+
+            # 端口配置字典
+            port_defaults = {
+                'SVR_WEB_HTTP_PORT': 20334,
+                'SVR_WEB_HTTPS_PORT': 443,
+                'SVR_HTTP_PORT': 20335,
+                'ADMIN_SVR_HTTP_PORT': 20336,
+                'SVR_MCP_PORT': 20337,
+            }
+
+            st.info("ℹ️ RAGFlow Docker端口映射配置", icon="ℹ️")
+
+            with st.form("ragflow_config_form"):
+                col1, col2 = st.columns([2, 1])
+
+                with col1:
+                    endpoint = st.text_input(
+                        "RAGFlow服务端点",
+                        value=current_endpoint
+                    )
+
+                with col2:
+                    api_key = st.text_input(
+                        "RAGFlow API密钥",
+                        value=current_api_key,
+                        type="password"
+                    )
+
+                st.markdown("**端口映射配置**")
+                ports_cols = st.columns(3)
+                ports_data = {}
+
+                port_items = list(port_defaults.items())
+                for idx, (port_name, default_val) in enumerate(port_items):
+                    col = ports_cols[idx % 3]
+                    with col:
+                        ports_data[port_name] = st.number_input(
+                            port_name,
+                            value=current_ports.get(port_name, default_val),
+                            min_value=1,
+                            max_value=65535
+                        )
+
+                submitted = st.form_submit_button(
+                    "💾 保存配置",
+                    type="primary",
+                    use_container_width=True
+                )
+
+                if submitted:
+                    try:
+                        config['ragflow'] = {
+                            'endpoint': endpoint.strip(),
+                            'api_key': api_key.strip(),
+                            'ports': {k: int(v) for k, v in ports_data.items()}
+                        }
+
+                        if save_config(config):
+                            st.success("✅ RAGFlow配置已保存")
+                            st.rerun()
+                        else:
+                            st.error("❌ 保存失败")
+                    except Exception as e:
+                        st.error(f"❌ 保存失败: {e}")
+
+            # 快速操作
+            col1, col2 = st.columns(2)
+
+            with col1:
+                if st.button("🔍 测试连接", use_container_width=True):
+                    try:
+                        client = RAGFlowClient(
+                            endpoint=current_endpoint,
+                            api_key=current_api_key,
+                            ports=current_ports
+                        )
+                        health = client.health_check()
+                        if health:
+                            st.success("✅ RAGFlow连接成功")
+                        else:
+                            st.warning("⚠️ RAGFlow服务未响应")
+                    except Exception as e:
+                        st.error(f"❌ 连接失败: {str(e)[:100]}")
+
+            with col2:
+                if st.button("🔄 重置为默认", use_container_width=True):
+                    try:
+                        config['ragflow'] = {
+                            'endpoint': 'http://192.168.3.147:20334',
+                            'api_key': '',
+                            'ports': port_defaults
+                        }
+                        if save_config(config):
+                            st.success("✅ 已重置为默认配置")
+                            st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ 重置失败: {e}")
+
+            # 显示当前配置状态
+            st.markdown("---")
+            st.markdown("**当前配置**")
+            if current_endpoint:
+                st.write(f"端点: {current_endpoint}")
+            if current_api_key:
+                st.write("API密钥: ✅ 已配置")
+            else:
+                st.write("API密钥: ❌ 未配置")
+
+            st.markdown("**端口配置**")
+            for port_name, port_value in (current_ports or port_defaults).items():
+                st.write(f"{port_name}: {port_value}")
+
+        except Exception as e:
+            st.error(f"加载配置失败: {e}")
+
+        # 数据库配置
+        st.markdown("---")
+        st.markdown("### 💾 数据库配置")
+
+        try:
+            import os
+            db_path = os.environ.get('DATABASE_PATH', '/app/data/experiments/experiments.db')
+
+            st.info(f"当前数据库路径: {db_path}")
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                if st.button("📊 查看数据库状态"):
+                    try:
+                        from ai_researcher.experiments.manager import ExperimentManager
+                        exp_manager = ExperimentManager(db_path)
+                        experiments = exp_manager.list_experiments()
+                        st.success(f"✅ 数据库正常，共 {len(experiments)} 个实验")
+                    except Exception as e:
+                        st.error(f"❌ 数据库异常: {e}")
+
+            with col2:
+                if st.button("🗃️ 初始化数据库"):
+                    try:
+                        from ai_researcher.experiments.manager import ExperimentManager
+                        exp_manager = ExperimentManager(db_path)
+                        st.success("✅ 数据库初始化成功")
+                    except Exception as e:
+                        st.error(f"❌ 初始化失败: {e}")
+
+        except Exception as e:
+            st.error(f"数据库操作失败: {e}")
+
+        # 系统信息
+        st.markdown("---")
+        st.markdown("### ℹ️ 系统信息")
+
+        sys_info = {
+            "Python版本": sys.version.split()[0],
+            "Streamlit版本": st.__version__,
+        }
+
+        for key, value in sys_info.items():
+            st.write(f"**{key}**: {value}")
+
+
+if __name__ == "__main__":
+    run()

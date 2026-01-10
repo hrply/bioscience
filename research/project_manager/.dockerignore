@@ -1,0 +1,163 @@
+# Docker构建忽略文件
+# 排除不必要的文件以优化构建速度和镜像大小
+
+# ==================== 版本控制 ====================
+.git
+.gitignore
+.gitattributes
+.gitmodules
+.gitconfig
+
+# ==================== 文档 ====================
+README.md
+*.md
+docs/
+*.md.bak
+
+# ==================== IDE和编辑器 ====================
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
+*~
+
+# ==================== 测试和覆盖率 ====================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.coverage
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.cache
+.pytest_cache/
+.mypy_cache/
+.hypothesis/
+
+# ==================== 构建和分发 ====================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ==================== Python ====================
+.env
+.env.*
+.envrc
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ==================== Jupyter Notebook ====================
+.ipynb_checkpoints
+
+# ==================== 日志文件 ====================
+logs/
+*.out
+
+# ==================== 数据和数据库 ====================
+*.db
+*.sqlite
+*.sqlite3
+data/
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+mongodb_data/
+redis_data/
+
+# ==================== 配置和密钥 ====================
+config/*.yaml.bak
+config/*.json.bak
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets/
+
+# ==================== Docker相关 ====================
+.dockerignore
+Dockerfile.dev
+docker-compose.dev.yml
+docker-compose.override.yml
+
+# ==================== CI/CD ====================
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# ==================== 其他 ====================
+node_modules/
+.npm
+.yarn/
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# 临时文件
+*.tmp
+*.temp
+.tmp/
+temp/
+
+# 备份文件
+*.bak
+*.backup
+*.old
+
+# ==================== 构建必需的文件 ====================
+# 这些文件必须保留在构建上下文中
+!requirements.txt
+!Dockerfile
+!docker-compose.yml
+!setup.py
+!setup.cfg
+!pyproject.toml
+
+# ==================== 源代码 ====================
+# 保留所有源代码
+ai_researcher/
+
+# ==================== 示例和模板 ====================
+examples/
+templates/
+
+# ==================== 必要的配置文件 ====================
+!config/config.yaml.example

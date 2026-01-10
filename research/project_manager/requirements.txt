@@ -1,0 +1,39 @@
+# 核心依赖
+openai>=1.0.0
+google-generativeai>=0.3.0
+anthropic>=0.7.0
+iflow-cli-sdk>=0.1.0
+
+# 数据处理
+pandas>=2.0.0
+numpy>=1.24.0
+scipy>=1.10.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+openpyxl>=3.1.0
+
+# 知识库和数据库
+requests>=2.31.0
+pymongo>=4.5.0
+chromadb>=0.4.0
+faiss-cpu>=1.7.0
+
+# 配置和工具
+pyyaml>=6.0
+click>=8.1.0
+pydantic>=2.3.0
+rich>=13.4.0
+tqdm>=4.65.0
+cryptography>=41.0.0
+
+# Web UI
+streamlit>=1.28.0
+
+# 实验管理
+sqlalchemy>=2.0.0
+alembic>=1.11.0
+datetime
+
+# 可选：Jupyter集成
+jupyter>=1.0.0
+ipywidgets>=8.0.0

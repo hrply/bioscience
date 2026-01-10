@@ -1,0 +1,166 @@
+# AI科研助手生产环境Docker Compose配置
+# 用于生产环境的部署配置
+
+services:
+  # AI科研助手主应用（生产优化）
+  ai_researcher:
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+    environment:
+      # 生产环境特定配置
+      - LOG_LEVEL=WARNING
+      - STREAMLIT_SERVER_MAX_UPLOAD_SIZE=200
+      - STREAMLIT_SERVER_MAX_MESSAGE_SIZE=200
+      # 禁用调试功能
+      - STREAMLIT_SERVER_ENABLE_CORS=false
+      - STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION=true
+      - STREAMLIT_SERVER_ENABLE_CSRF_PROTECTION=true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 生产环境Redis（持久化优化）
+  redis:
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    command: redis-server /etc/redis/redis.conf --requirepass ${REDIS_PASSWORD:-your_redis_password}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 生产环境MongoDB（持久化优化）
+  mongodb:
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+    environment:
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-your_secure_password}
+    command: mongod --config /etc/mongod.conf --auth
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ==================== Nginx反向代理（可选） ====================
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: ai_researcher_nginx
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./nginx/ssl:/etc/nginx/ssl:ro
+  #     - ./nginx/logs:/var/log/nginx
+  #   networks:
+  #     - ai_researcher_net
+  #   depends_on:
+  #     - ai_researcher
+
+  # ==================== 监控服务（可选） ====================
+  # Prometheus监控
+  # prometheus:
+  #   image: prom/prometheus
+  #   container_name: ai_researcher_prometheus
+  #   restart: unless-stopped
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+  #     - prometheus_data:/prometheus
+  #   networks:
+  #     - ai_researcher_net
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #     - '--web.console.libraries=/etc/prometheus/console_libraries'
+  #     - '--web.console.templates=/etc/prometheus/consoles'
+
+  # Grafana仪表板
+  # grafana:
+  #   image: grafana/grafana
+  #   container_name: ai_researcher_grafana
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - grafana_data:/var/lib/grafana
+  #     - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+  #   networks:
+  #     - ai_researcher_net
+  #   environment:
+  #     - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+
+# ==================== 数据卷（生产环境优化） ====================
+volumes:
+  ai_researcher_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /data/ai_researcher
+
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /data/redis
+
+  mongodb_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /data/mongodb
+
+  # prometheus_data:
+  #   driver: local
+
+  # grafana_data:
+  #   driver: local
+
+# ==================== 网络配置 ====================
+networks:
+  ai_researcher_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+    driver_opts:
+      com.docker.network.bridge.name: ai_researcher_br0
